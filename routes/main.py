@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify, Response, current_app
 from flask_login import login_required, current_user
-from util import get_user_by_username, get_manager_by_department, get_avatar_url, get_next_employee_id, DEPARTMENTS, REQUESTABLE_LEAVE_TYPES
+from util import get_user_by_username, get_manager_by_department, get_avatar_url, get_next_employee_id, REQUESTABLE_LEAVE_TYPES
 import datetime
 import mysql.connector
 
@@ -102,7 +102,7 @@ def profile(username):
         return "User not found", 404
     return render_template('profile.html',emp=user, avatar_url=get_avatar_url(user), user=current_user)
 
-@main_bp.route('/edit_profile', methods=['POST'])
+@main_bp.route('/edit_profile', methods=['POST', 'GET'])
 def edit_profile():
     username = session.get('user')
     if not username:
@@ -134,4 +134,16 @@ def edit_profile():
         conn.close()
         flash("Profile updated successfully!", "success")
         return redirect(url_for('main.profile', username=username))
-    return render_template('edit_profile.html', user=user)
+    # Fetch departments from DB for the dropdown
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM departments ORDER BY name")
+    departments = [row[0] for row in cursor.fetchall()]
+    cursor.close()
+    conn.close()
+    return render_template('edit_profile.html', user=user, departments=departments)

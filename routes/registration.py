@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
 from werkzeug.security import generate_password_hash
-from util import check_hr_code, get_next_employee_id, DEPARTMENTS
+from util import check_hr_code, get_next_employee_id
 import datetime
 import secrets
 from flask_login import login_required, current_user
@@ -30,8 +30,7 @@ def register():
     role = hr_code_item.get('role', 'user')
     department = hr_code_item.get('department', '')
 
-    if department and department not in DEPARTMENTS:
-        return jsonify({'success': False, 'error': 'Invalid department selected.'})
+
 
     employee_id = get_next_employee_id()
     hire_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
@@ -85,6 +84,7 @@ def check_email():
 @registration_bp.route('/hr/generate_hr_code', methods=['GET', 'POST'])
 def generate_hr_code():
     if request.method == 'GET':
+        ensure_default_departments()
         conn = mysql.connector.connect(
             host=current_app.config['DB_HOST'],
             user=current_app.config['DB_USER'],
@@ -92,19 +92,19 @@ def generate_hr_code():
             database=current_app.config['DB_NAME']
         )
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT DISTINCT department FROM users WHERE department IS NOT NULL AND department != ''")
-        departments = sorted([row['department'] for row in cursor.fetchall()])
+        cursor.execute("SELECT name FROM departments ORDER BY name")
+        departments = [row['name'] for row in cursor.fetchall()]
         cursor.close()
         conn.close()
-        return render_template('add-employee.html', departments=DEPARTMENTS, user=current_user)
+        return render_template('add-employee.html', departments=departments, user=current_user)
     data = request.get_json()
     email = data.get('email')
     role = data.get('role', 'user')
     department = data.get('department')
     if not email:
         return jsonify({'success': False, 'error': 'Email is required'})
-    if not department or department not in DEPARTMENTS:
-        return jsonify({'success': False, 'error': 'Department is required and must be valid.'})
+    if not department or not department.strip():
+        return jsonify({'success': False, 'error': 'Department is required.'})
     code = secrets.token_hex(4)
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
@@ -117,6 +117,14 @@ def generate_hr_code():
         "INSERT INTO hrcodes (code, email, role, department) VALUES (%s, %s, %s, %s)",
         (code, email, role, department)
     )
+    
+    # Before inserting HR code
+    cursor.execute("SELECT id FROM departments WHERE name=%s", (department,))
+    dept_row = cursor.fetchone()
+    if not dept_row:
+        cursor.execute("INSERT INTO departments (name) VALUES (%s)", (department,))
+        conn.commit()
+
     conn.commit()
     cursor.close()
     conn.close()
@@ -171,6 +179,20 @@ def regenerate_hr_code():
     cursor.execute("DELETE FROM hrcodes WHERE code=%s", (code_value,))
 
     if department:
+        conn = mysql.connector.connect(
+            host=current_app.config['DB_HOST'],
+            user=current_app.config['DB_USER'],
+            password=current_app.config['DB_PASSWORD'],
+            database=current_app.config['DB_NAME']
+        )
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM departments WHERE name=%s", (department,))
+        if not cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({'success': False, 'error': 'Invalid department selected.'})
+        cursor.close()
+        conn.close()
         new_code = secrets.token_hex(4)
         cursor.execute(
             "INSERT INTO hrcodes (code, email, role, department) VALUES (%s, %s, %s, %s)",
@@ -180,3 +202,20 @@ def regenerate_hr_code():
     cursor.close()
     conn.close()
     return redirect(url_for('registration.view_hr_codes'))
+
+def ensure_default_departments():
+    default_departments = ["HR", "Administration", "Food", "Overnight"]
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor()
+    for dept in default_departments:
+        cursor.execute("SELECT id FROM departments WHERE name=%s", (dept,))
+        if not cursor.fetchone():
+            cursor.execute("INSERT INTO departments (name) VALUES (%s)", (dept,))
+    conn.commit()
+    cursor.close()
+    conn.close()

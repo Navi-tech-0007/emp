@@ -23,12 +23,14 @@
   font-weight: 600;
   color: #222;
   border-bottom: 2px solid #e3e6e8;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 .table-schedule tr {
   transition: background 0.15s;
 }
 .table-schedule tbody tr:hover {
-  background: #f5f7fa;
+  background: #f0f6ff;
 }
 .table-schedule .badge {
   font-size: 0.95em;
@@ -70,10 +72,41 @@
   font-weight: 600;
   border: none;
   padding: 0.3em 1.1em;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
 }
-.btn-info:hover {
+.btn-info:hover, .btn-info:focus {
   background: #1256a0;
   color: #fff;
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13);
+}
+.schedule-controls {
+  background: #f8fafd;
+  border-radius: 1.2em;
+  padding: 1.2em 1.5em;
+  box-shadow: 0 2px 12px rgba(25, 118, 210, 0.06);
+  margin-bottom: 1.5em;
+}
+.schedule-controls label {
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 0.2em;
+}
+.schedule-controls .form-control,
+.schedule-controls .btn,
+.schedule-controls .btn-link {
+  border-radius: 2em !important;
+}
+.schedule-controls .btn-outline-primary {
+  border-width: 2px;
+}
+.schedule-controls .btn-link {
+  color: #1976d2;
+  font-weight: 500;
+  text-decoration: underline;
+}
+.schedule-controls .btn-link:hover {
+  color: #1256a0;
 }
 </style>
 {% endblock %}
@@ -81,32 +114,44 @@
 {% block content %}
 <div class="container py-4">
 
-  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-    <h2 class="mb-0">
-      <i class="fa fa-calendar-alt"></i> My Weekly Schedule
-      <button type="button" class="btn btn-info btn-sm ml-2 align-baseline" data-bs-toggle="modal" data-bs-target="#scheduleInfoModal">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <h2 class="mb-0 fw-bold text-primary">
+      <i class="fa fa-calendar-alt me-2"></i> My Weekly Schedule
+      <button type="button" class="btn btn-info btn-sm ms-2 align-baseline shadow-sm" data-bs-toggle="modal" data-bs-target="#scheduleInfoModal">
         <i class="fa fa-info-circle"></i> Info
       </button>
     </h2>
-    <div class="d-flex align-items-center">
-      <form method="get" class="form-inline mb-0">
-        <input type="hidden" name="week_start" value="{{ week_start }}">
-        <button type="submit" name="nav" value="prev" class="btn btn-light btn-sm mr-2 shadow-sm">
-          <i class="fa fa-chevron-left"></i> Prev
-        </button>
-        <button type="submit" name="nav" value="next" class="btn btn-light btn-sm shadow-sm">
-          Next <i class="fa fa-chevron-right"></i>
-        </button>
-      </form>
-      <form method="get" class="form-inline mb-3">
-        <label for="week-filter" class="mr-2 mb-0 font-weight-bold">Week of:</label>
-        <input type="date" id="week-filter" name="week_start" class="form-control mr-2"
-               value="{{ week_days[0][1] }}">
-        <button type="submit" class="btn btn-outline-primary btn-sm shadow-sm">Go</button>
-        <a href="{{ url_for('schedule.my_schedule') }}" class="btn btn-link btn-sm ml-2">
-          Today
-        </a>
-      </form>
+  </div>
+
+  <div class="schedule-controls d-flex flex-wrap align-items-end justify-content-between gap-3">
+    <form method="get" class="d-flex align-items-center gap-2 mb-0 flex-wrap">
+      <input type="hidden" name="week_start" value="{{ week_start }}">
+      <button type="submit" name="nav" value="prev" class="btn btn-light btn-sm shadow-sm px-3">
+        <i class="fa fa-chevron-left"></i>
+      </button>
+      <button type="submit" name="nav" value="next" class="btn btn-light btn-sm shadow-sm px-3">
+        <i class="fa fa-chevron-right"></i>
+      </button>
+    </form>
+    <form method="get" class="d-flex align-items-center gap-2 mb-0 flex-wrap">
+      <label for="week-filter" class="mb-0 me-1">Week of:</label>
+      <input type="date" id="week-filter" name="week_start" class="form-control form-control-sm"
+             value="{{ week_days[0][1] }}" style="min-width: 140px;">
+      <button type="submit" class="btn btn-outline-primary btn-sm shadow-sm px-3">Go</button>
+      <a href="{{ url_for('schedule.my_schedule') }}" class="btn btn-link btn-sm ms-1 px-2">
+        Today
+      </a>
+    </form>
+    <div class="ms-auto text-end">
+      <span class="badge bg-primary" style="font-size:1em;">
+        {% set today_str = now.strftime('%Y-%m-%d') %}
+        {% set is_this_week = week_days[0][1] <= today_str <= week_days[-1][1] %}
+        {% if is_this_week %}
+          <i class="fa fa-calendar-check-o"></i> This week ({{ now.strftime('%A, %d %b %Y') }})
+        {% else %}
+          Week of {{ week_days[0][1] }}
+        {% endif %}
+      </span>
     </div>
   </div>
 
@@ -114,8 +159,28 @@
     <strong>Total hours this week:</strong> {{ total_hours }} hours
   </div>
 
-  <!-- Modern, Responsive Schedule Table -->
-  <div class="table-responsive">
+  <div class="d-flex flex-wrap justify-content-end align-items-center mb-2 gap-2">
+    <button class="btn btn-outline-secondary btn-sm me-2" id="exportPdfBtn">
+      <i class="fa fa-file-pdf-o"></i> Export PDF
+    </button>
+    <div class="dropdown">
+      <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="columnDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        Columns
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="columnDropdown" style="min-width:180px;">
+        <li><label class="dropdown-item"><input type="checkbox" class="me-2 column-toggle" data-col="2" checked>Start</label></li>
+        <li><label class="dropdown-item"><input type="checkbox" class="me-2 column-toggle" data-col="3" checked>End</label></li>
+        <li><label class="dropdown-item"><input type="checkbox" class="me-2 column-toggle" data-col="4" checked>Type</label></li>
+        <li><label class="dropdown-item"><input type="checkbox" class="me-2 column-toggle" data-col="5" checked>Description</label></li>
+        <li><label class="dropdown-item"><input type="checkbox" class="me-2 column-toggle" data-col="6" checked>Location</label></li>
+      </ul>
+    </div>
+    <!-- Place near the filters -->
+    <a href="{{ url_for('schedule.my_schedule', view='week') }}" class="btn btn-outline-primary btn-sm {% if view == 'week' %}active{% endif %}">Week</a>
+    <a href="{{ url_for('schedule.my_schedule', view='month') }}" class="btn btn-outline-primary btn-sm {% if view == 'month' %}active{% endif %}">Month</a>
+  </div>
+
+  <div class="table-responsive rounded-3 shadow-sm">
     <table class="table table-schedule mb-0">
       <thead>
         <tr>
@@ -131,12 +196,12 @@
       <tbody>
         {% for day, date in week_days %}
           {% set shift = week_schedule.get(date) %}
-          <tr title="{% if shift and shift.description %}{{ shift.description }}{% else %}No description{% endif %}">
+          <tr {% if date == now.strftime('%Y-%m-%d') %}class="table-primary"{% endif %} title="{% if shift and shift.description %}{{ shift.description }}{% else %}No description{% endif %}">
             <td>{{ day }}</td>
             <td>{{ date }}</td>
             {% if shift %}
               {% if shift.shift_type == 'Vacation' or shift.leave_type == 'Vacation' %}
-                <td colspan="2" class="text-center align-middle" style="font-weight:600;">
+                <td colspan="2" class="text-center align-middle fw-bold">
                   <span class="badge badge-warning">Vacation</span>
                 </td>
                 <td>
@@ -159,25 +224,13 @@
                 <td>{{ shift.location or '-' }}</td>
               {% endif %}
             {% else %}
-              <td colspan="5" class="text-muted"><i class="fa fa-minus-circle mr-1"></i>No shift assigned</td>
+              <td colspan="5" class="text-muted"><i class="fa fa-minus-circle me-1"></i>No shift assigned</td>
             {% endif %}
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  <div class="text-center my-3">
-    {% set today_str = now.strftime('%Y-%m-%d') %}
-    {% set is_this_week = week_days[0][1] <= today_str <= week_days[-1][1] %}
-    <span class="badge badge-primary" style="font-size:1em;">
-      {% if is_this_week %}
-        <i class="fa fa-calendar-check-o"></i> This week ({{ now.strftime('%A, %d %b %Y') }})
-      {% else %}
-        Week of {{ week_days[0][1] }}
-      {% endif %}
-    </span>
-  </div>
-
   {% set next_shift = None %}
   {% for day, date in week_days %}
     {% set shift = week_schedule.get(date) %}
@@ -186,49 +239,87 @@
     {% endif %}
   {% endfor %}
   {% if next_shift %}
-    <div class="alert alert-success text-center mb-3" style="font-size:1.05em;">
+    <div class="alert alert-success text-center mb-3 mt-4" style="font-size:1.05em;">
       <i class="fa fa-arrow-right"></i>
       <b>Next shift:</b> {{ next_shift.day }}, {{ next_shift.date }} at {{ next_shift.start_time }} ({{ next_shift.type }})
     </div>
   {% endif %}
 
-  <div class="text-right text-muted mt-2" style="font-size:0.98em;">
+  <div class="text-end text-muted mt-2" style="font-size:0.98em;">
     Total shifts: {{ total_shifts }}
   </div>
 </div>
 
-<!-- Modern Schedule Info Modal -->
-<div class="modal fade" id="scheduleInfoModal" tabindex="-1" role="dialog" aria-labelledby="scheduleInfoModalLabel" aria-hidden="true">
+<!-- Modern Schedule Info Modal (Bootstrap 5) -->
+<div class="modal fade" id="scheduleInfoModal" tabindex="-1" aria-labelledby="scheduleInfoModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header" style="background: #1976d2; color: #fff;">
+    <div class="modal-content rounded-4 shadow">
+      <div class="modal-header" style="background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%); color: #fff;">
         <h5 class="modal-title" id="scheduleInfoModalLabel">
-          <i class="fa fa-info-circle mr-2"></i>Schedule Info & Legend
+          <i class="fa fa-info-circle me-2"></i>Schedule Info &amp; Legend
         </h5>
-        <button type="button" class="close text-white" data-bs-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body" style="background: #f7fafd;">
-        <ul>
-          <li><b>Navigation:</b> Use the arrows or date picker to view different weeks.</li>
-          <li><b>Shift Types:</b>
-            <span class="badge badge-success ml-1">Day</span>
-            <span class="badge badge-info ml-1">Evening</span>
-            <span class="badge badge-warning ml-1">Leave</span>
-            <span class="badge badge-secondary ml-1">Other</span>
+        <div class="mb-3">
+          <span class="badge badge-success me-2">Day</span>
+          <span class="badge badge-info me-2">Evening</span>
+          <span class="badge badge-warning me-2">Leave</span>
+          <span class="badge badge-secondary me-2">Other</span>
+          <span class="badge bg-primary text-white me-2">Current Week</span>
+        </div>
+        <ul class="list-unstyled mb-3">
+          <li class="mb-2"><i class="fa fa-arrows-h text-primary me-1"></i>
+            <b>Navigation:</b> Use the <span class="fw-bold">arrows</span> or <span class="fw-bold">date picker</span> to view different weeks.
           </li>
-          <li><b>Details:</b> Hover or tap on a row for a quick description.</li>
-          <li><b>Mobile:</b> Scroll left/right to view all schedule details.</li>
-          <li><b>Tip:</b> If you see <span class="text-muted"><i class="fa fa-minus-circle"></i> No shift assigned</span>, you have no shift that day.</li>
+          <li class="mb-2"><i class="fa fa-calendar text-success me-1"></i>
+            <b>Today:</b> Click <span class="fw-bold">Today</span> to jump to the current week.
+          </li>
+          <li class="mb-2"><i class="fa fa-info-circle text-info me-1"></i>
+            <b>Shift Types:</b> Colored badges indicate shift type (see above).
+          </li>
+          <li class="mb-2"><i class="fa fa-eye text-secondary me-1"></i>
+            <b>Details:</b> Hover or tap on a row for a quick description.
+          </li>
+          <li class="mb-2"><i class="fa fa-mobile text-warning me-1"></i>
+            <b>Mobile:</b> Scroll left/right to view all schedule details.
+          </li>
+          <li class="mb-2"><i class="fa fa-minus-circle text-muted me-1"></i>
+            <b>No shift assigned:</b> If you see this icon, you have no shift that day.
+          </li>
         </ul>
-        <div class="alert alert-info" style="background:#e3f2fd; color:#1976d2; border:none;">
-          <i class="fa fa-lightbulb-o"></i>
-          <strong>Need help?</strong> Contact <a href="mailto:hr@company.com">HR</a> or your manager for schedule changes.
+        <div class="alert alert-info d-flex align-items-center" style="background:#e3f2fd; color:#1976d2; border:none;">
+          <i class="fa fa-lightbulb-o fa-lg me-2"></i>
+          <div>
+            <strong>Need help?</strong> Contact <a href="mailto:hr@company.com" class="fw-bold text-primary">HR</a> or your manager for schedule changes.
+          </div>
         </div>
       </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="exportPdfModal" tabindex="-1" aria-labelledby="exportPdfModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-3">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exportPdfModalLabel"><i class="fa fa-file-pdf-o me-2 text-danger"></i>Export Schedule</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>How would you like to export your schedule?</p>
+        <ul>
+          <li><b>Preview PDF:</b> Open a preview in a new tab (you can save or print from there).</li>
+          <li><b>Direct Print:</b> Download and open the PDF, then immediately open the print dialog.</li>
+        </ul>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="previewPdfBtn"><i class="fa fa-eye me-1"></i> Preview PDF</button>
+        <button type="button" class="btn btn-danger" id="printPdfBtn"><i class="fa fa-print me-1"></i> Direct Print</button>
       </div>
     </div>
   </div>
@@ -237,8 +328,123 @@
 
 {% block extra_js %}
 <script>
-  $(function () {
-    $('[data-toggle="tooltip"]').tooltip();
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.column-toggle').forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+      var colIdx = parseInt(this.getAttribute('data-col'));
+      var table = document.querySelector('.table-schedule');
+      var th = table.querySelector('thead tr').children[colIdx];
+      th.style.display = this.checked ? '' : 'none';
+      table.querySelectorAll('tbody tr').forEach(function(row) {
+        var cell = row.children[colIdx];
+        if (cell) cell.style.display = checkbox.checked ? '' : 'none';
+      });
+    });
   });
+
+  var exportBtn = document.getElementById('exportPdfBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function() {
+      var modalEl = document.getElementById('exportPdfModal');
+      if (modalEl) {
+        var modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      } else {
+        alert("Export modal not found in the DOM.");
+      }
+    });
+  }
+
+  function generateSchedulePdf(callback) {
+    var userName = "{{ current_user.name|default(current_user.username, true) }}";
+    var userEmail = "{{ current_user.username|default('') }}";
+    var userDept = "{{ current_user.department|default('') }}";
+    var userRole = "{{ current_user.role|default('') }}";
+    var weekRange = "{% if week_days %}{{ week_days[0][1] }} to {{ week_days[-1][1] }}{% endif %}";
+    var totalHours = "{{ total_hours }}";
+    var totalShifts = "{{ total_shifts }}";
+    function getInitials(name) {
+      if (!name) return "User";
+      return name.split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase();
+    }
+    var initials = getInitials(userName);
+    var today = new Date();
+    var yyyy = today.getFullYear();
+    var mm = String(today.getMonth() + 1).padStart(2, '0');
+    var dd = String(today.getDate()).padStart(2, '0');
+    var dateStr = yyyy + mm + dd;
+    var table = document.querySelector('.table-schedule');
+    var headers = [];
+    table.querySelectorAll('thead th').forEach(function(th) {
+      if (th.style.display !== 'none') headers.push(th.innerText);
+    });
+    var data = [];
+    table.querySelectorAll('tbody tr').forEach(function(row) {
+      var rowData = [];
+      row.querySelectorAll('td').forEach(function(td) {
+        if (td.style.display !== 'none') rowData.push(td.innerText);
+      });
+      if (rowData.length) data.push(rowData);
+    });
+    var doc = new jspdf.jsPDF({orientation: 'landscape'});
+    doc.setFontSize(16);
+    doc.text('My Weekly Schedule', 14, 16);
+    doc.setFontSize(11);
+    doc.text('User: ' + initials, 14, 24);
+    doc.text('Name: ' + userName, 80, 24);
+    if (userEmail) {
+      doc.text('Username: ' + userEmail, 14, 31);
+    }
+    if (userDept) {
+      doc.text('Department: ' + userDept, 80, 31);
+    }
+    if (userRole) {
+      doc.text('Role: ' + userRole, 150, 24);
+    }
+    doc.text('Week: ' + weekRange, 150, 31);
+    doc.text('Total Hours: ' + totalHours, 14, 38);
+    doc.text('Total Shifts: ' + totalShifts, 80, 38);
+    doc.text('Exported: ' + yyyy + '-' + mm + '-' + dd, 150, 38);
+
+    doc.autoTable({
+      head: [headers],
+      body: data,
+      startY: 43,
+      styles: {fontSize: 10},
+      theme: 'grid'
+    });
+    var filename = initials + '_' + dateStr + '_schedule.pdf';
+    callback(doc, filename);
+  }
+
+  var previewBtn = document.getElementById('previewPdfBtn');
+  if (previewBtn) {
+    previewBtn.addEventListener('click', function() {
+      generateSchedulePdf(function(doc) {
+        var pdfUrl = doc.output('bloburl');
+        window.open(pdfUrl, '_blank');
+        bootstrap.Modal.getInstance(document.getElementById('exportPdfModal')).hide();
+      });
+    });
+  }
+
+  var printBtn = document.getElementById('printPdfBtn');
+  if (printBtn) {
+    printBtn.addEventListener('click', function() {
+      generateSchedulePdf(function(doc) {
+        var pdfBlob = doc.output('blob');
+        var pdfUrl = URL.createObjectURL(pdfBlob);
+        var win = window.open(pdfUrl, '_blank');
+        win.onload = function() {
+          win.print();
+        };
+        bootstrap.Modal.getInstance(document.getElementById('exportPdfModal')).hide();
+      });
+    });
+  }
+});
 </script>
 {% endblock %}

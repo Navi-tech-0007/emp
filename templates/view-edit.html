@@ -138,6 +138,52 @@
     </a>
   </div>
   {% endif %}
+
+  <div class="mb-4">
+    <h4>Add / Edit User</h4>
+    <form id="userForm">
+      <input type="hidden" name="user_id" value="{{ user.user_id }}">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="name" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select name="role" class="form-control">
+          <option value="user">User</option>
+          <option value="hr">HR</option>
+          <option value="admin">Admin</option>
+          <option value="root">Root</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select name="department" class="form-control">
+          {% for dept in departments %}
+            <option value="{{ dept }}" {% if user.department == dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+          <option value="__other__">Other (Add New)</option>
+        </select>
+        <input type="text" id="new_department" class="form-control mt-2" placeholder="Enter new department" style="display:none;">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <div>
+          <label class="mr-3"><input type="radio" name="active" value="1" checked> Active</label>
+          <label><input type="radio" name="active" value="0"> Inactive</label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Save User</button>
+    </form>
+  </div>
 </div>
 
 <!-- ...modals... -->
@@ -189,6 +235,28 @@ $(document).on('click', '.edit-user-btn', function(e) {
   $.get('/edit_form/' + employeeId, function(html) {
     $('#editUserModalBody').html(html);
   });
+});
+
+// Show/hide new department input
+$('select[name="department"]').on('change', function() {
+  if ($(this).val() === '__other__') {
+    $('#new_department').show().prop('required', true);
+  } else {
+    $('#new_department').hide().prop('required', false);
+  }
+});
+
+// Handle user form submission
+$('#userForm').on('submit', function(e) {
+  e.preventDefault();
+  var formData = $(this).serialize();
+  $.post('/save_user', formData, function(response) {
+    if (response.success) {
+      location.reload();
+    } else {
+      alert('Error saving user: ' + response.error);
+    }
+  }, 'json');
 });
 </script>
 {% endblock %}

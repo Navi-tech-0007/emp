@@ -35,8 +35,9 @@ def configure_schedule():
         database=current_app.config['DB_NAME']
     )
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT DISTINCT department FROM users WHERE department IS NOT NULL AND department != ''")
-    departments = sorted([row['department'] for row in cursor.fetchall()])
+    # Use departments table, not users
+    cursor.execute("SELECT name FROM departments ORDER BY name")
+    departments = [row['name'] for row in cursor.fetchall()]
     selected_department = request.args.get('department', '')
     week_offset = int(request.args.get('week_offset', 0))
     users = []

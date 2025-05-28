@@ -23,13 +23,19 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="hr_department">Department</label>
-              <select id="hr_department" name="department" class="form-control" required>
-                <option value="" disabled selected>Select Department</option>
+              <label for="department">Department</label>
+              <select name="department" id="department" class="form-control" required>
+                <option value="" disabled selected>Select department</option>
                 {% for dept in departments %}
                   <option value="{{ dept }}">{{ dept }}</option>
                 {% endfor %}
+                {% if session['role'] == 'hr' %}
+                  <option value="__other__">Other (Add New)</option>
+                {% endif %}
               </select>
+              {% if session['role'] == 'hr' %}
+                <input type="text" id="new_department" class="form-control mt-2" placeholder="Enter new department" style="display:none;">
+              {% endif %}
             </div>
             <button type="submit" class="btn btn-warning btn-block">Generate HR Code</button>
             <div id="hrcode_result" class="mt-3"></div>
@@ -44,16 +50,35 @@
     </div>
   </div>
 </div>
+{% if session['role'] == 'hr' %}
+<script>
+document.getElementById('department').addEventListener('change', function() {
+  var newDept = document.getElementById('new_department');
+  if (this.value === '__other__') {
+    newDept.style.display = '';
+    newDept.required = true;
+  } else {
+    newDept.style.display = 'none';
+    newDept.required = false;
+  }
+});
+</script>
+{% endif %}
+
 <script>
 document.getElementById('hrcode_form').onsubmit = function(e) {
   e.preventDefault();
+  var deptSelect = document.getElementById('department');
+  var deptValue = deptSelect.value === '__other__'
+    ? (document.getElementById('new_department') ? document.getElementById('new_department').value : '')
+    : deptSelect.value;
   fetch('/hr/generate_hr_code', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
       email: document.getElementById('hr_email').value,
       role: document.getElementById('hr_role').value,
-      department: document.getElementById('hr_department').value
+      department: deptValue
     })
   })
   .then(res => res.json())

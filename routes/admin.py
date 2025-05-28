@@ -14,8 +14,10 @@ def view_users():
         database=current_app.config['DB_NAME']
     )
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT DISTINCT department FROM users WHERE department IS NOT NULL AND department != ''")
-    departments = [row['department'] for row in cursor.fetchall()]
+    # Fetch all departments from the departments table
+    cursor.execute("SELECT name FROM departments ORDER BY name")
+    departments = [row['name'] for row in cursor.fetchall()]
+    # Fetch all distinct roles from users
     cursor.execute("SELECT DISTINCT role FROM users WHERE role IS NOT NULL AND role != ''")
     roles = [row['role'] for row in cursor.fetchall()]
     cursor.execute("SELECT * FROM users")

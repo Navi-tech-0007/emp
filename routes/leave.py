@@ -47,8 +47,9 @@ def manage_leave():
         database=current_app.config['DB_NAME']
     )
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT DISTINCT department FROM users WHERE department IS NOT NULL AND department != ''")
-    departments = [row['department'] for row in cursor.fetchall()]
+    # Use departments table, not users
+    cursor.execute("SELECT name FROM departments ORDER BY name")
+    departments = [row['name'] for row in cursor.fetchall()]
     selected_department = request.args.get('department', '')
     leave_requests = []
     if selected_department:
@@ -80,7 +81,7 @@ def manage_leave():
         departments=departments,
         selected_department=selected_department,
         user=current_user,
-        flask_request=request  # <-- renamed here
+        flask_request=request
     )
 
 @leave_bp.route('/approve_leave/<int:request_id>')

@@ -832,25 +832,44 @@
   z-index: 1110 !important;
   position: relative;
 }
+
+/* Add this to your <style> block or CSS file */
+.resources-grid .resource-item {
+  position: relative;
+  transition: background 0.18s, box-shadow 0.18s, color 0.18s;
+  z-index: 1;
+}
+.resources-grid .resource-item:hover,
+.resources-grid .resource-item:focus {
+  background: #f3f7fb;
+  color: #2176c1;
+  box-shadow: 0 2px 12px rgba(33,118,193,0.10);
+  z-index: 2;
+  text-decoration: none;
+  outline: none;
+}
+.resources-grid .resource-item:hover .resource-icon,
+.resources-grid .resource-item:focus .resource-icon {
+  background: #2176c1 !important;
+  color: #fff !important;
+  transition: background 0.18s, color 0.18s;
+}
 </style>
 
 <!-- Sidebar: visible only on mobile -->
 <nav class="sidebar" id="sidebar">
   <div class="logo d-flex align-items-center">
-    <span id="dashboard-title" class="font-weight-bold ml-2">Dashboard</span>
+    <span id="dashboard-title" class="fw-bold ms-2">Dashboard</span>
   </div>
-
-  <!-- Move user info here, just before the nav list -->
-  <div class="sidebar-user d-flex align-items-center px-3 py-2 mb-2" style="background:rgba(255,255,255,0.22); border-radius:12px; margin:1.5rem 1rem 0.5rem 1rem;">
-    <img src="{{ avatar_url }}" class="rounded-circle mr-2" style="width:36px; border:2px solid #e0e7ef;">
+  <div class="sidebar-user d-flex align-items-center gap-2 px-3 py-2 mb-2 bg-white rounded-3 shadow-sm">
+    <img src="{{ avatar_url }}" class="rounded-circle me-2" style="width:36px; border:2px solid #e0e7ef;">
     <div>
-      <div class="font-weight-bold" style="color:#2176c1;">{{ user.name or '-' }}</div>
+      <div class="fw-bold text-primary">{{ user.name or '-' }}</div>
       <div class="small text-muted">{{ user.role|default('-')|capitalize }}</div>
     </div>
   </div>
-
   <ul class="nav flex-column w-100">
-    <li class="sidebar-category mt-3 mb-1 text-uppercase small font-weight-bold text-muted">General</li>
+    <li class="sidebar-category mt-3 mb-1 text-uppercase small fw-bold text-muted">General</li>
     <li class="nav-item">
       <a class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}">
         <i class="fa fa-home"></i> <span>Home</span>
@@ -876,9 +895,8 @@
         <i class="fa fa-calendar"></i> <span>Time Off & Leave</span>
       </a>
     </li>
-
     {% if session.get('role') in ['hr', 'admin', 'root', 'manager'] %}
-      <li class="sidebar-category mt-3 mb-1 text-uppercase small font-weight-bold text-muted">Management</li>
+      <li class="sidebar-category mt-3 mb-1 text-uppercase small fw-bold text-muted">Management</li>
       <li class="nav-item">
         <a class="nav-link" href="{{ url_for('admin.view_users') }}">
           <i class="fa fa-cogs"></i> <span>User Management</span>
@@ -904,8 +922,7 @@
         </a>
       </li>
     {% endif %}
-
-    <li class="sidebar-category mt-3 mb-1 text-uppercase small font-weight-bold text-muted">Account</li>
+    <li class="sidebar-category mt-3 mb-1 text-uppercase small fw-bold text-muted">Account</li>
     <li class="nav-item mt-1">
       <a class="nav-link" href="{{ url_for('auth.logout') }}">
         <i class="fa fa-sign-out"></i> <span>Log out</span>
@@ -926,23 +943,44 @@
   </button>
 
   <div class="container-fluid pt-0">
-    
 
-    <!-- Photo & Thought Cards (with consistent spacing) -->
-    <div class="dashboard-section photo-thought-section" style="margin-bottom:8rem;">
+    <!-- Photo & Thought Cards -->
+    <div class="dashboard-section photo-thought-section mb-5">
       <div class="row justify-content-center mb-4">
         <div class="col-12 mb-3">
-          <h4 class="font-weight-bold text-center" style="color:#2176c1; letter-spacing:1px;">Inspiration & Mood</h4>
+          <h4 class="fw-bold text-center text-primary" style="letter-spacing:1px;">Updates & Announcements</h4>
         </div>
-        <!-- Photo Card with parallax effect -->
         <div class="col-md-6 mb-3 mb-md-0">
-          <div class="card info-panel h-100 p-3 shadow-sm rounded" style="background: #fff;">
-            <div id="photo-container" style="height:220px;overflow:hidden;">
-              <img id="random-photo" src="" alt="Random" class="card-img-top" style="height:220px;object-fit:cover;">
-            </div>
+          <div class="card info-panel h-100 p-4 shadow-sm rounded bg-white">
+            <h5 class="fw-bold mb-3 text-primary">Announcements</h5>
+            {% if filtered_announcements %}
+              <ul class="list-group list-group-flush mb-4">
+                {% for ann in filtered_announcements %}
+                  <li>{{ ann.title }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="text-center text-muted py-4">
+                No announcements at this time.
+              </div>
+            {% endif %}
+
+            <h5 class="fw-bold mb-3 text-primary mt-4">To-Do</h5>
+            {% if tasks %}
+              <ul class="list-group list-group-flush">
+                {% for task in tasks %}
+                  <li class="list-group-item py-2">
+                    <i class="fa fa-check-circle text-success me-2"></i>{{ task }}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="text-center text-muted py-2">
+                No tasks for you right now.
+              </div>
+            {% endif %}
           </div>
         </div>
-        <!-- Thought Card with glassmorphism -->
         <div class="col-md-6">
           <div class="glass-card info-panel h-100 p-3 shadow-sm rounded d-flex flex-column justify-content-center">
             <blockquote class="blockquote mb-0 text-center">
@@ -957,7 +995,7 @@
     <!-- Resources section -->
     <div class="dashboard-section card hide-on-mobile resources-section" style="margin-top: 0;">
       <div class="card-body">
-        <h4 class="font-weight-bold mb-4" style="color:#102040;">Associate Resources</h4>
+        <h4 class="fw-bold mb-4" style="color:#102040;">Associate Resources</h4>
         <div class="resources-grid">
           <a href="{{ url_for('leave.leave') }}" class="resource-item text-decoration-none">
             <div class="resource-icon bg-primary text-white"><i class="fa fa-calendar-check"></i></div>
@@ -987,60 +1025,56 @@
       </div>
     </div>
 
-    <!-- Management Tools Section (its own card) -->
+    <!-- Management Tools Section -->
     <div class="dashboard-section hide-on-mobile" style="background: transparent; border: none;">
-      <h4 class="font-weight-bold mb-4" style="color:#102040;">Management Tools</h4>
+      <h4 class="fw-bold mb-4" style="color:#102040;">Management Tools</h4>
       <div class="management-tools-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 2rem;">
-        <!-- Management Hub -->
         <a href="{{ url_for('leave.management_hub') }}" class="tool-card tool-card-hover text-decoration-none" style="color:inherit;">
           <div class="tool-card-content">
             <i class="fa fa-cogs fa-2x mb-3" style="color:#2176c1;"></i>
-            <div class="h5 font-weight-bold mb-2" style="color:#102040;">Management Hub</div>
+            <div class="h5 fw-bold mb-2" style="color:#102040;">Management Hub</div>
             <div class="text-muted mb-2 small">Central dashboard for HR/admin tools.</div>
           </div>
           <div class="tool-card-overlay">
-            <div class="font-weight-bold mb-2" style="color:#2176c1;">Management Hub</div>
+            <div class="fw-bold mb-2" style="color:#2176c1;">Management Hub</div>
             <div class="small text-muted mb-2">Access leave approvals, user management, analytics, and more from one place.</div>
-            <span class="badge badge-primary">Go to Hub</span>
+            <span class="badge bg-primary">Go to Hub</span>
           </div>
         </a>
-        <!-- User Management -->
         <a href="{{ url_for('admin.view_users') }}" class="tool-card tool-card-hover text-decoration-none" style="color:inherit;">
           <div class="tool-card-content">
             <i class="fa fa-users fa-2x mb-3" style="color:#2176c1;"></i>
-            <div class="h5 font-weight-bold mb-2" style="color:#102040;">User Management</div>
+            <div class="h5 fw-bold mb-2" style="color:#102040;">User Management</div>
             <div class="text-muted mb-2 small">Manage users and roles.</div>
           </div>
           <div class="tool-card-overlay">
-            <div class="font-weight-bold mb-2" style="color:#2176c1;">User Management</div>
+            <div class="fw-bold mb-2" style="color:#2176c1;">User Management</div>
             <div class="small text-muted mb-2">Add, update, deactivate users, assign roles, and reset passwords.</div>
-            <span class="badge badge-primary">Manage Users</span>
+            <span class="badge bg-primary">Manage Users</span>
           </div>
         </a>
-        <!-- HR Codes -->
         <a href="{{ url_for('registration.view_hr_codes') }}" class="tool-card tool-card-hover text-decoration-none" style="color:inherit;">
           <div class="tool-card-content">
             <i class="fa fa-key fa-2x mb-3" style="color:#2176c1;"></i>
-            <div class="h5 font-weight-bold mb-2" style="color:#102040;">HR Codes</div>
+            <div class="h5 fw-bold mb-2" style="color:#102040;">HR Codes</div>
             <div class="text-muted mb-2 small">Generate and track codes.</div>
           </div>
           <div class="tool-card-overlay">
-            <div class="font-weight-bold mb-2" style="color:#2176c1;">HR Codes</div>
+            <div class="fw-bold mb-2" style="color:#2176c1;">HR Codes</div>
             <div class="small text-muted mb-2">Create and manage HR codes for onboarding and secure registration.</div>
-            <span class="badge badge-primary">HR Codes</span>
+            <span class="badge bg-primary">HR Codes</span>
           </div>
         </a>
-        <!-- Add Employee -->
         <a href="{{ url_for('registration.generate_hr_code') }}" class="tool-card tool-card-hover text-decoration-none" style="color:inherit;">
           <div class="tool-card-content">
             <i class="fa fa-user-plus fa-2x mb-3" style="color:#2176c1;"></i>
-            <div class="h5 font-weight-bold mb-2" style="color:#102040;">Add Employee</div>
+            <div class="h5 fw-bold mb-2" style="color:#102040;">Add Employee</div>
             <div class="text-muted mb-2 small">Onboard new staff fast.</div>
           </div>
           <div class="tool-card-overlay">
-            <div class="font-weight-bold mb-2" style="color:#2176c1;">Add Employee</div>
+            <div class="fw-bold mb-2" style="color:#2176c1;">Add Employee</div>
             <div class="small text-muted mb-2">Generate a unique HR code for new employee registration and onboarding.</div>
-            <span class="badge badge-primary">Add Employee</span>
+            <span class="badge bg-primary">Add Employee</span>
           </div>
         </a>
       </div>
@@ -1048,10 +1082,10 @@
 
     <!-- Combined Info Panels (Leave Balances & Recent Requests) -->
     <div class="dashboard-section card p-4 mb-4" style="background: #fafdff; border-radius: 1.25rem; border: none;">
-      <div class="row no-gutters">
-        <div class="col-md-6 pr-md-3 mb-4 mb-md-0">
-          <div class="info-panel h-100 p-3 shadow-sm rounded" style="background: #fff;">
-            <div class="panel-header mb-3" style="font-weight:600;"><i class="fa fa-calendar"></i> Leave Balances</div>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="info-panel h-100 p-3 shadow-sm rounded bg-white">
+            <div class="panel-header mb-3 fw-semibold"><i class="fa fa-calendar"></i> Leave Balances</div>
             <div class="table-responsive">
               <table class="table table-sm mb-0" style="font-size:1rem;">
                 <thead>
@@ -1072,16 +1106,16 @@
                 </tbody>
               </table>
               <div class="d-flex justify-content-end mt-3">
-                <a href="{{ url_for('leave.leave') }}" class="btn btn-outline-primary btn-sm">
+                <a href="{{ url_for('leave.leave') }}" class="btn btn-outline-primary btn-sm rounded-pill">
                   Show Details
                 </a>
               </div>
             </div>
           </div>
         </div>
-        <div class="col-md-6 pl-md-3">
-          <div class="info-panel h-100 p-3 shadow-sm rounded" style="background: #fff;">
-            <div class="panel-header mb-3" style="font-weight:600;"><i class="fa fa-clock-o"></i> Recent Leave Requests</div>
+        <div class="col-md-6">
+          <div class="info-panel h-100 p-3 shadow-sm rounded bg-white">
+            <div class="panel-header mb-3 fw-semibold"><i class="fa fa-clock-o"></i> Recent Leave Requests</div>
             <div class="small table-responsive">
               {% if recent_leaves %}
                 <table class="table table-sm mb-0">
@@ -1111,7 +1145,7 @@
               {% else %}
                 <div class="text-center">
                   <span class="text-muted d-block mb-2">No recent requests.</span>
-                  <a href="{{ url_for('leave.leave') }}" class="btn btn-primary btn-sm">
+                  <a href="{{ url_for('leave.leave') }}" class="btn btn-primary btn-sm rounded-pill">
                     <i class="fa fa-plane"></i> Request time off here
                   </a>
                 </div>
@@ -1218,25 +1252,25 @@ document.addEventListener("DOMContentLoaded", function() {
   </div>
 </div>
 
-<footer class="footer mt-auto py-4 border-top bg-white" style="font-size:1rem;">
+<footer class="footer mt-auto py-4 border-top bg-white fs-5">
   <div class="container-fluid px-4">
-    <div class="row align-items-center">
-      <div class="col-md-4 text-center text-md-left mb-3 mb-md-0">
-        <div class="font-weight-bold mb-2" style="font-size:1.05rem;">FOLLOW US!</div>
+    <div class="row align-items-center text-center text-md-start">
+      <div class="col-md-4 mb-3 mb-md-0">
+        <div class="fw-bold mb-2" style="font-size:1.05rem;">FOLLOW US!</div>
         <div>
-          <a href="#" class="text-dark mr-2">GlobalTech Canada</a> -
-          <a href="#" class="text-dark mr-2">LinkedIn</a> |
-          <a href="#" class="text-dark mr-2">Facebook</a> |
-          <a href="#" class="text-dark mr-2">Instagram</a> |
+          <a href="#" class="text-dark me-2">GlobalTech Canada</a> -
+          <a href="#" class="text-dark me-2">LinkedIn</a> |
+          <a href="#" class="text-dark me-2">Facebook</a> |
+          <a href="#" class="text-dark me-2">Instagram</a> |
           <a href="#" class="text-dark">Twitter</a>
         </div>
       </div>
-      <div class="col-md-4 text-center mb-3 mb-md-0">
+      <div class="col-md-4 mb-3 mb-md-0">
         <span style="font-size:1.5rem; vertical-align:middle;">🍁</span>
         <span class="mx-2">&copy; 2025 GlobalTech, Inc.</span>
-        <a href="#" class="text-dark ml-2">Company - About Us</a>
+        <a href="#" class="text-dark ms-2">Company - About Us</a>
       </div>
-      <div class="col-md-4 text-center text-md-right">
+      <div class="col-md-4 text-md-end">
         <span>English (CA)</span>
       </div>
     </div>
@@ -1260,8 +1294,6 @@ function closeMobileSidebar() {
   setTimeout(() => overlay.style.display = 'none', 300);
   document.body.style.overflow = '';
 }
-
-// Toggle button
 const hamburger = document.getElementById('mobileSidebarToggle');
 hamburger.onclick = function(e) {
   e.stopPropagation();
@@ -1274,8 +1306,6 @@ hamburger.onclick = function(e) {
     hamburger.classList.add('is-active');
   }
 };
-
-// Also remove .is-active when closing sidebar by overlay or resize
 document.getElementById('sidebarOverlay').onclick = function() {
   closeMobileSidebar();
   hamburger.classList.remove('is-active');
@@ -1287,4 +1317,6 @@ window.addEventListener('resize', function() {
   }
 });
 </script>
+
+<p class="text-danger">DEBUG: user_role = {{ user_role }}</p>
 {% endblock %}
