@@ -1,0 +1,242 @@
+{% extends "main.html" %}
+{% block navbar %}{% endblock %}
+{% block body %}
+{% include "dashboard_nav.html" %}
+
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <h2 class="mb-0">
+      <i class="fa fa-calendar-alt"></i> My Weekly Schedule
+      <button type="button" class="btn btn-info btn-sm ml-2 align-baseline" data-toggle="modal" data-target="#scheduleInfoModal">
+        <i class="fa fa-info-circle"></i> Info
+      </button>
+    </h2>
+    <div class="d-flex align-items-center">
+      <form method="get" class="form-inline mb-0">
+        <input type="hidden" name="week_start" value="{{ week_start }}">
+        <button type="submit" name="nav" value="prev" class="btn btn-light btn-sm mr-2 shadow-sm">
+          <i class="fa fa-chevron-left"></i> Prev
+        </button>
+        <button type="submit" name="nav" value="next" class="btn btn-light btn-sm shadow-sm">
+          Next <i class="fa fa-chevron-right"></i>
+        </button>
+      </form>
+      <form method="get" class="form-inline mb-3">
+        <label for="week-filter" class="mr-2 mb-0 font-weight-bold">Week of:</label>
+        <input type="date" id="week-filter" name="week_start" class="form-control mr-2"
+               value="{{ week_days[0][1] }}">
+        <button type="submit" class="btn btn-outline-primary btn-sm shadow-sm">Go</button>
+        <a href="{{ url_for('schedule.my_schedule') }}" class="btn btn-link btn-sm ml-2">
+          Today
+        </a>
+      </form>
+    </div>
+  </div>
+
+  <div class="alert alert-info text-center mb-3 shadow-sm">
+    <strong>Total hours this week:</strong> {{ total_hours }} hours
+  </div>
+
+  <!-- Modern, Responsive Schedule Table -->
+  <div class="table-responsive">
+    <table class="table table-schedule mb-0">
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Date</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Location</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for day, date in week_days %}
+          {% set shift = week_schedule.get(date) %}
+          <tr title="{% if shift and shift.description %}{{ shift.description }}{% else %}No description{% endif %}">
+            <td>{{ day }}</td>
+            <td>{{ date }}</td>
+            {% if shift %}
+              {% if shift.shift_type == 'Vacation' or shift.leave_type == 'Vacation' %}
+                <td colspan="2" class="text-center align-middle" style="font-weight:600;">
+                  <span class="badge badge-warning">Vacation</span>
+                </td>
+                <td>
+                  <span class="badge badge-warning">Vacation</span>
+                </td>
+                <td class="text-muted" colspan="2">Enjoy your vacation!</td>
+              {% else %}
+                <td>{{ shift.start_time or '-' }}</td>
+                <td>{{ shift.end_time or '-' }}</td>
+                <td>
+                  <span class="badge
+                    {% if shift.shift_type == 'Day' %}badge-success
+                    {% elif shift.shift_type == 'Evening' %}badge-info
+                    {% elif shift.shift_type == 'Leave' %}badge-warning
+                    {% else %}badge-secondary{% endif %}">
+                    {{ shift.shift_type or '-' }}
+                  </span>
+                </td>
+                <td>{{ shift.description or '-' }}</td>
+                <td>{{ shift.location or '-' }}</td>
+              {% endif %}
+            {% else %}
+              <td colspan="5" class="text-muted"><i class="fa fa-minus-circle mr-1"></i>No shift assigned</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="text-center my-3">
+    {% set today_str = now.strftime('%Y-%m-%d') %}
+    {% set is_this_week = week_days[0][1] <= today_str <= week_days[-1][1] %}
+    <span class="badge badge-primary" style="font-size:1em;">
+      {% if is_this_week %}
+        <i class="fa fa-calendar-check-o"></i> This week ({{ now.strftime('%A, %d %b %Y') }})
+      {% else %}
+        Week of {{ week_days[0][1] }}
+      {% endif %}
+    </span>
+  </div>
+
+  {% set next_shift = None %}
+  {% for day, date in week_days %}
+    {% set shift = week_schedule.get(date) %}
+    {% if shift and shift.start_time and (not next_shift) %}
+      {% set next_shift = {'day': day, 'date': date, 'start_time': shift.start_time, 'type': shift.shift_type} %}
+    {% endif %}
+  {% endfor %}
+  {% if next_shift %}
+    <div class="alert alert-success text-center mb-3" style="font-size:1.05em;">
+      <i class="fa fa-arrow-right"></i>
+      <b>Next shift:</b> {{ next_shift.day }}, {{ next_shift.date }} at {{ next_shift.start_time }} ({{ next_shift.type }})
+    </div>
+  {% endif %}
+
+  <div class="text-right text-muted mt-2" style="font-size:0.98em;">
+    Total shifts: {{ total_shifts }}
+  </div>
+</div>
+
+<!-- Modern Schedule Info Modal -->
+<div class="modal fade" id="scheduleInfoModal" tabindex="-1" role="dialog" aria-labelledby="scheduleInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header" style="background: #1976d2; color: #fff;">
+        <h5 class="modal-title" id="scheduleInfoModalLabel">
+          <i class="fa fa-info-circle mr-2"></i>Schedule Info & Legend
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" style="background: #f7fafd;">
+        <ul>
+          <li><b>Navigation:</b> Use the arrows or date picker to view different weeks.</li>
+          <li><b>Shift Types:</b>
+            <span class="badge badge-success ml-1">Day</span>
+            <span class="badge badge-info ml-1">Evening</span>
+            <span class="badge badge-warning ml-1">Leave</span>
+            <span class="badge badge-secondary ml-1">Other</span>
+          </li>
+          <li><b>Details:</b> Hover or tap on a row for a quick description.</li>
+          <li><b>Mobile:</b> Scroll left/right to view all schedule details.</li>
+          <li><b>Tip:</b> If you see <span class="text-muted"><i class="fa fa-minus-circle"></i> No shift assigned</span>, you have no shift that day.</li>
+        </ul>
+        <div class="alert alert-info" style="background:#e3f2fd; color:#1976d2; border:none;">
+          <i class="fa fa-lightbulb-o"></i>
+          <strong>Need help?</strong> Contact <a href="mailto:hr@company.com">HR</a> or your manager for schedule changes.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.table-schedule {
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+}
+.table-schedule th, .table-schedule td {
+  vertical-align: middle !important;
+  font-size: 1em;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: none;
+  border-left: none;
+  border-right: none;
+  padding: 0.65em 0.5em;
+  text-align: center;
+}
+.table-schedule th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #222;
+  border-bottom: 2px solid #e3e6e8;
+}
+.table-schedule tr {
+  transition: background 0.15s;
+}
+.table-schedule tbody tr:hover {
+  background: #f5f7fa;
+}
+.table-schedule .badge {
+  font-size: 0.95em;
+  padding: 0.35em 0.9em;
+  border-radius: 1em;
+  font-weight: 500;
+  box-shadow: none;
+}
+.table-schedule .badge-success {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+.table-schedule .badge-info {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+.table-schedule .badge-warning {
+  background: #fff8e1;
+  color: #f9a825;
+}
+.table-schedule .badge-secondary {
+  background: #eceff1;
+  color: #607d8b;
+}
+.table-schedule .text-muted {
+  font-style: italic;
+  color: #b0b0b0 !important;
+}
+@media (max-width: 600px) {
+  .table-schedule th, .table-schedule td {
+    font-size: 0.95em;
+    padding: 0.5em 0.2em;
+  }
+}
+.btn-info {
+  background: #1976d2;
+  color: #fff;
+  border-radius: 2rem;
+  font-weight: 600;
+  border: none;
+  padding: 0.3em 1.1em;
+}
+.btn-info:hover {
+  background: #1256a0;
+  color: #fff;
+}
+</style>
+
+<script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,460 @@
+{% extends "main.html" %}
+{% block navbar %}
+  <style>
+    .topbar { display: none !important; }
+  </style>
+{% endblock %}
+{% block body %}
+  <!-- No dashboard_nav.html include, so topbar is hidden -->
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+  body {
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', Arial, sans-serif;
+  }
+  .profile-layout {
+    display: flex;
+    min-height: 100vh;
+    gap: 0;
+    font-family: 'Inter', Arial, sans-serif;
+  }
+  .profile-sidebar {
+    width: 290px;
+    background: #2176c1;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 1.2rem 1rem 1.2rem;
+    box-shadow: 2px 0 24px 0 rgba(26,35,126,0.08);
+    position: fixed;
+    top: 0; /* No topbar, so start at 0 */
+    left: 0;
+    height: 100vh; /* Full height */
+    min-height: 100vh;
+    z-index: 2;
+    overflow-y: auto;
+  }
+  .profile-sidebar .profile-img {
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #fff;
+    background: #e3e7ef;
+    margin-bottom: 1.1rem;
+    box-shadow: 0 2px 12px rgba(80,80,160,0.13);
+    font-size: 3.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .profile-sidebar .profile-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+    text-align: center;
+    letter-spacing: 0.5px;
+    color: #fff;
+  }
+  .profile-sidebar .profile-title {
+    font-size: 1.05rem;
+    color: #b3e0ff;
+    margin-bottom: 0.7rem;
+    text-align: center;
+    font-weight: 500;
+  }
+  .profile-sidebar .profile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    align-items: center;
+  }
+  .profile-sidebar .profile-actions .btn {
+    background: #fff;
+    color: #2176c1;
+    border: none;
+    box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+    transition: background 0.2s, color 0.2s;
+    font-size: 1.05rem;
+    padding: 0.45rem 1.1rem;
+    border-radius: 8px;
+    width: 170px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+  }
+  .profile-sidebar .profile-actions .btn:hover {
+    background: #e3e7ef;
+    color: #1976d2;
+  }
+  .profile-sidebar .nav {
+    width: 100%;
+    margin-top: 2.2rem;
+    flex: 1 1 auto;
+  }
+  .profile-sidebar .nav-link {
+    color: #fff;
+    font-weight: 500;
+    border-radius: 10px;
+    margin-bottom: 0.4rem;
+    padding: 0.95rem 2.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    transition: background 0.18s, color 0.18s;
+    font-size: 1.13rem;
+    letter-spacing: 0.2px;
+    background: transparent;
+  }
+  .profile-sidebar .nav-link.active,
+  .profile-sidebar .nav-link:hover {
+    background: rgba(255,255,255,0.13);
+    color: #ffe082;
+  }
+  .profile-sidebar .nav-link i {
+    font-size: 1.25rem;
+    width: 26px;
+    text-align: center;
+    color: #fff;
+    transition: color 0.18s;
+  }
+  .profile-sidebar .nav-link.active i,
+  .profile-sidebar .nav-link:hover i {
+    color: #ffe082;
+  }
+  .profile-main {
+    flex: 1 1 auto;
+    padding: 2.5rem 2.5rem 2.5rem 2.5rem;
+    background: #f8fafc;
+    min-height: 100vh;
+    margin-left: 290px;
+    width: 100%;
+    margin-top: 0; /* No topbar, so no margin */
+  }
+  .profile-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(80,80,160,0.10);
+    padding: 2rem 2rem 1.5rem 2rem;
+    margin-bottom: 2rem;
+    border: none;
+    transition: box-shadow 0.2s;
+  }
+  .profile-card-title {
+    font-size: 1.18rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    color: #222;
+    letter-spacing: 0.2px;
+  }
+  .profile-label {
+    color: #222;
+    font-size: 1.01rem;
+    font-weight: 600;
+    margin-bottom: 0.18rem;
+    letter-spacing: 0.1px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .profile-value {
+    font-size: 1.13rem;
+    color: #222;
+    font-weight: 500;
+    margin-bottom: 0.7rem;
+    letter-spacing: 0.1px;
+    word-break: break-word;
+  }
+  .profile-link {
+    color: #1976d2;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.18s;
+  }
+  .profile-link:hover {
+    text-decoration: underline;
+    color: #0d47a1;
+  }
+  .profile-edit-btn {
+    float: right;
+    font-size: 1.1rem;
+    color: #1976d2;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.18s;
+  }
+  .profile-edit-btn:hover {
+    color: #0d47a1;
+  }
+  .popover.fade.bs-popover-bottom {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(80,80,160,0.13);
+    border: 1px solid #e0e7ef;
+    padding: 0.5rem 0.8rem;
+  }
+  @media (max-width: 1100px) {
+    .profile-main {
+      padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+    }
+  }
+  @media (max-width: 900px) {
+    .profile-layout {
+      flex-direction: column;
+    }
+    .profile-sidebar {
+      width: 100vw;
+      min-height: unset;
+      flex-direction: row;
+      align-items: flex-start;
+      padding: 1rem 0.5rem;
+      border-radius: 0;
+      border-bottom: 1px solid #1e7bd7;
+      top: 0;
+      height: auto;
+    }
+    .profile-sidebar .profile-img {
+      width: 70px;
+      height: 70px;
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+    }
+    .profile-sidebar .profile-name {
+      font-size: 1.1rem;
+    }
+    .profile-sidebar .profile-title {
+      font-size: 0.98rem;
+      margin-bottom: 0.4rem;
+    }
+    .profile-sidebar .nav {
+      flex: 3 1 auto;
+      margin-top: 0;
+      display: flex;
+      flex-direction: row;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      padding-left: 1rem;
+    }
+    .profile-sidebar .nav-link {
+      margin-bottom: 0;
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+    }
+    .profile-main {
+      padding: 1rem 0.3rem;
+      margin-top: 0;
+    }
+  }
+  @media (max-width: 600px) {
+    .profile-sidebar {
+      flex-direction: column;
+      align-items: center;
+      padding: 0.5rem 0;
+      top: 0;
+      height: auto;
+    }
+    .profile-sidebar .profile-section {
+      min-width: unset;
+      max-width: unset;
+      padding: 0.7rem 0.2rem;
+    }
+    .profile-main {
+      padding: 0.5rem 0.1rem;
+      margin-top: 0;
+    }
+    .profile-card {
+      padding: 1rem 0.5rem;
+    }
+  }
+</style>
+
+<div class="profile-layout">
+  <!-- Sidebar -->
+  <aside class="profile-sidebar">
+    <div class="profile-section d-flex flex-column align-items-center justify-content-center">
+      {% if emp.photo_url %}
+        <img src="{{ emp.photo_url }}" alt="Profile" class="profile-img shadow mx-auto d-block" style="object-fit: cover; width: 108px; height: 108px; border-radius: 50%;">
+      {% else %}
+        <span class="fa fa-user-circle profile-img text-secondary mx-auto d-flex align-items-center justify-content-center"
+              style="font-size:108px;width:108px;height:108px;border-radius:50%;background:#f4f4fa;display:flex;"></span>
+      {% endif %}
+      <div class="profile-name text-center">{{ emp.name or '-' }}</div>
+      <div class="profile-title text-center">{{ emp.title or emp.role|capitalize }}</div>
+      <div class="profile-actions d-flex flex-row gap-2 mb-3 justify-content-center w-100">
+        <!-- Email Icon Button -->
+        <button id="show-email-btn" class="btn btn-light d-flex align-items-center justify-content-center p-0" title="Show Email" type="button" style="border-radius: 50%; width:44px; height:44px; font-size:1.25rem; position:relative;">
+          <i class="fa fa-envelope"></i>
+          <span id="email-popover" class="popover fade bs-popover-bottom" style="display:none;position:absolute;left:50%;transform:translateX(-50%);top:110%;min-width:180px;z-index:1000;">
+            <div class="popover-arrow" style="left:50%;"></div>
+            <div class="popover-body text-dark text-center" style="font-size:0.98rem;">
+              {{ emp.email or emp.username }}
+            </div>
+          </span>
+        </button>
+        <!-- Team Icon Button -->
+        <a href="#" class="btn btn-light d-flex align-items-center justify-content-center p-0" title="Team" style="border-radius: 50%; width:44px; height:44px; font-size:1.25rem;">
+          <i class="fa fa-users"></i>
+        </a>
+      </div>
+    </div>
+    <nav class="nav flex-column">
+      <a class="nav-link active" href="#"><i class="fa fa-table-cells-large"></i>Summary</a>
+      <a class="nav-link" href="#"><i class="fa fa-briefcase"></i>Job</a>
+      <a class="nav-link" href="#"><i class="fa fa-sack-dollar"></i>Compensation</a>
+      <a class="nav-link" href="#"><i class="fa fa-calendar-check"></i>Absence</a>
+      <a class="nav-link" href="#"><i class="fa fa-user"></i>Personal</a>
+      <a class="nav-link" href="#"><i class="fa fa-chart-line"></i>Performance</a>
+      <a class="nav-link" href="#"><i class="fa fa-graduation-cap"></i>Career</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="profile-main">
+    <div class="row g-3 mb-3">
+      <div class="col-lg-8">
+        <div class="profile-card">
+          <div class="row">
+            <div class="col-md-4 mb-2">
+              <div class="profile-label"><i class="fa fa-id-badge me-1"></i>Store No.</div>
+              <div class="profile-value">{{ emp.cost_center or '-' }}</div>
+            </div>
+            <div class="col-md-4 mb-2">
+              <div class="profile-label"><i class="fa fa-location-dot me-1"></i>Location</div>
+              <div class="profile-value">{{ emp.location or '-' }}</div>
+            </div>
+            <div class="col-md-4 mb-2">
+              <div class="profile-label"><i class="fa fa-users me-1"></i>Manager</div>
+              <div class="profile-value">
+                {% if emp.managers %}
+                  {% for mgr in emp.managers.split(',') %}
+                    <span class="profile-link">{{ mgr.strip() }}</span>{% if not loop.last %}, {% endif %}
+                  {% endfor %}
+                {% else %}
+                  -
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="profile-card h-100 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="profile-card-title mb-0">Job History</span>
+            <button class="profile-edit-btn" title="Edit"><i class="fa fa-ellipsis-v"></i></button>
+          </div>
+          {% if emp.job_history and emp.job_history is iterable and emp.job_history|length > 0 %}
+            {% for job in emp.job_history %}
+              <div>
+                <div class="fw-semibold profile-link">{{ job.title }}</div>
+                <div class="text-muted small">{{ job.company }} | {{ job.period }} | {{ job.location }}</div>
+                <div class="mb-2">{{ job.description }}</div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-muted">No job history available.</div>
+          {% endif %}
+          <a href="#" class="profile-link mt-2">Add Job History</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="profile-card">
+          <div class="profile-card-title">Job Details</div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="profile-label"><i class="fa fa-id-badge me-1"></i>Associate ID</div>
+              <div class="profile-value">{{ emp.employee_id or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-sitemap me-1"></i>Supervisory Organization</div>
+              <div class="profile-value">{{ emp.supervisory_org or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-briefcase me-1"></i>Job</div>
+              <div class="profile-value">{{ emp.employee_id or '-' }} {{ emp.title or emp.role|capitalize }}</div>
+              <div class="profile-label"><i class="fa fa-user-tie me-1"></i>Job Profile</div>
+              <div class="profile-value">{{ emp.title or emp.role|capitalize }}</div>
+              <div class="profile-label"><i class="fa fa-layer-group me-1"></i>Job Family</div>
+              <div class="profile-value">{{ emp.job_family or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-id-card me-1"></i>Associate Type</div>
+              <div class="profile-value">{{ emp.associate_type or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-signal me-1"></i>Management Level</div>
+              <div class="profile-value">{{ emp.management_level or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-clock me-1"></i>Time Type</div>
+              <div class="profile-value">{{ emp.time_type or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-percent me-1"></i>FTE</div>
+              <div class="profile-value">{{ emp.fte or '-' }}</div>
+            </div>
+            <div class="col-md-6">
+              <div class="profile-label"><i class="fa fa-location-dot me-1"></i>Location</div>
+              <div class="profile-value">{{ emp.location or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-moon me-1"></i>Work Shift</div>
+              <div class="profile-value">{{ emp.work_shift or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-calendar-plus me-1"></i>Hire Date</div>
+              <div class="profile-value">{{ emp.hire_date or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-calendar me-1"></i>Original Hire Date</div>
+              <div class="profile-value">{{ emp.original_hire_date or emp.hire_date or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-calendar-check me-1"></i>Continuous Service Date</div>
+              <div class="profile-value">{{ emp.service_date or '-' }}</div>
+              <div class="profile-label"><i class="fa fa-hourglass-half me-1"></i>Length of Service</div>
+              <div class="profile-value">{{ emp.length_of_service or '-' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="profile-card h-100 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="profile-card-title mb-0">Education</span>
+          </div>
+          {% if emp.education and emp.education is iterable and emp.education|length > 0 %}
+            {% for edu in emp.education %}
+              <div>
+                <div class="fw-semibold">{{ edu.degree }}</div>
+                <div class="text-muted small">{{ edu.institution }} ({{ edu.year }})</div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-muted">No education added.</div>
+          {% endif %}
+          <a href="#" class="profile-link mt-2">Add Education</a>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Show/hide email popover on button click
+  document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('show-email-btn');
+    var pop = document.getElementById('email-popover');
+    if (btn && pop) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        pop.style.display = (pop.style.display === 'none' || pop.style.display === '') ? 'block' : 'none';
+      });
+      document.addEventListener('click', function() {
+        pop.style.display = 'none';
+      });
+      btn.addEventListener('mouseenter', function() {
+        btn.title = '{{ emp.email or emp.username }}';
+      });
+    }
+  });
+</script>
+{% endblock %}

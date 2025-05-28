@@ -1,0 +1,240 @@
+{% extends "main.html" %}
+{% block head %}Register - Employee Directory{% endblock %}
+{% block body %}
+
+<!-- Add before </body> -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+<style>
+  body {
+    background: #f8f9fa;
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .bg-boxes {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-box {
+    position: absolute;
+    width: 32px; height: 32px;
+    background: rgba(108,99,255,0.08);
+    border-radius: 8px;
+    animation: floatBox 8s infinite alternate;
+  }
+  .bg-box:nth-child(1) { top: 10%; left: 8%; animation-delay: 0s;}
+  .bg-box:nth-child(2) { top: 30%; left: 80%; animation-delay: 1s;}
+  .bg-box:nth-child(3) { top: 60%; left: 15%; animation-delay: 2s;}
+  .bg-box:nth-child(4) { top: 80%; left: 60%; animation-delay: 3s;}
+  .bg-box:nth-child(5) { top: 50%; left: 50%; animation-delay: 4s;}
+  .bg-box:nth-child(6) { top: 20%; left: 60%; animation-delay: 2.5s;}
+  .bg-box:nth-child(7) { top: 75%; left: 30%; animation-delay: 1.5s;}
+  @keyframes floatBox {
+    to { transform: translateY(-20px) scale(1.1);}
+  }
+  .register-card {
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(44,62,80,0.12);
+    border-top: 4px solid #6c63ff;
+    border: none;
+    position: relative;
+    z-index: 1;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+    padding: 2.2rem 2.2rem 2rem 2.2rem;
+  }
+  .register-logo {
+    display: block;
+    margin: 0 auto 2rem auto;
+    height: 64px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  .form-control:focus {
+    border-color: #6c63ff;
+    box-shadow: 0 0 0 0.2rem rgba(108,99,255,.15);
+  }
+  .btn-primary {
+    background: #6c63ff;
+    border-color: #6c63ff;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover, .btn-primary:focus {
+    background: #5548c8;
+    border-color: #5548c8;
+  }
+  .back-link {
+    display: block;
+    text-align: right;
+    margin-top: 0.5rem;
+    font-size: 0.95em;
+  }
+  .info-text {
+    color: #555;
+    font-size: 1.08em;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .password-strength { height: 6px; border-radius: 3px; margin-top: 4px; transition: width 0.3s, background 0.3s; }
+  @media (max-width: 600px) {
+    .register-card {
+      padding: 1.1rem 0.5rem 1rem 0.5rem;
+      margin-top: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+    .register-logo {
+      height: 48px;
+      margin-bottom: 1.2rem;
+    }
+    .info-text {
+      font-size: 0.98em;
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      font-size: 0.97em;
+    }
+    .btn-primary, .btn {
+      font-size: 1em;
+      padding: 0.55rem 1rem;
+    }
+  }
+</style>
+<div class="bg-boxes">
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+</div>
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+  <div class="row w-100 justify-content-center">
+    <div class="col-md-6">
+      <div class="card register-card shadow">
+        <div class="card-body">
+          <div class="text-center">
+            <img src="{{ url_for('static', filename='logo_gt.png') }}" alt="GlobalTech Logo" class="register-logo">
+          </div>
+          <h3 class="card-title mb-2 text-center" style="color:#6c63ff;">Create Your Account</h3>
+          <p class="text-center text-muted mb-4" style="font-size:1.1em;">
+            Join GlobalTech — Empowering teams. Connecting people.
+          </p>
+          <div class="info-text">
+            Welcome! Please fill in your details to create your Employee Directory account.<br>
+            <span class="text-muted">All fields are required. Use your company email and HR code for verification.</span>
+          </div>
+          <form id="register_form" autocomplete="off">
+            <div class="form-group">
+              <label for="reg_name">Full Name</label>
+              <input type="text" id="reg_name" class="form-control" required placeholder="e.g. Jane Doe">
+            </div>
+            <div class="form-group">
+              <label for="reg_email">Email</label>
+              <input type="email" id="reg_email" class="form-control" required value="{{ request.args.get('email', '') }}" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+              <label for="reg_password">Password</label>
+              <div class="input-group mb-2">
+                <input type="password" class="form-control" id="reg_password" name="password" placeholder="Choose a strong password" required oninput="showStrength(this.value)">
+                <div class="input-group-append">
+                  <span class="input-group-text" onclick="togglePassword('reg_password', this)" style="cursor:pointer;">
+                    <i class="fa fa-eye"></i>
+                  </span>
+                </div>
+              </div>
+              <div class="password-strength bg-secondary" id="strengthBar" style="width:0;"></div>
+            </div>
+            <div class="form-group">
+              <label for="reg_hrcode">HR Code</label>
+              <input type="text" id="reg_hrcode" class="form-control" required placeholder="Provided by HR">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+            <div id="register_error" class="text-danger mt-2"></div>
+            <a href="{{ url_for('auth.login') }}" class="back-link">Back to login</a>
+          </form>
+          <div class="text-center mt-3">
+            <small>
+              <i class="fa fa-lock text-success"></i>
+              Your credentials are encrypted and secure.
+              <br>
+              <a href="{{ url_for('main.contact') }}" class="text-info">Need help?</a>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="mt-auto py-4 bg-light text-center">
+  <div class="container">
+    <img src="{{ url_for('static', filename='logo_gt.png') }}" alt="GlobalTech Logo" style="height:32px;">
+    <div class="mt-2">
+      <small class="text-muted">&copy; {{ 2025 }} GlobalTech.com &mdash; All rights reserved.</small>
+      <br>
+      <small>
+        <a href="{{ url_for('main.about') }}">About</a> &middot;
+        <a href="{{ url_for('main.contact') }}">Contact</a>
+      </small>
+    </div>
+  </div>
+</footer>
+<script>
+window.onload = function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('email')) {
+    document.getElementById('reg_email').value = params.get('email');
+  }
+};
+document.getElementById('register_form').onsubmit = function(e) {
+  e.preventDefault();
+  fetch('/register', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      name: document.getElementById('reg_name').value,
+      email: document.getElementById('reg_email').value,
+      password: document.getElementById('reg_password').value,
+      hrcode: document.getElementById('reg_hrcode').value
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      window.location.href = '/dashboard';
+    } else {
+      document.getElementById('register_error').innerText = data.error || 'Registration failed';
+      document.getElementById('register_form').classList.add('shake');
+      setTimeout(() => document.getElementById('register_form').classList.remove('shake'), 500);
+    }
+  });
+};
+function togglePassword(fieldId, toggleIcon) {
+  var pwd = document.getElementById(fieldId);
+  if (pwd.type === "password") {
+    pwd.type = "text";
+    toggleIcon.innerHTML = '<i class="fa fa-eye-slash"></i>';
+  } else {
+    pwd.type = "password";
+    toggleIcon.innerHTML = '<i class="fa fa-eye"></i>';
+  }
+}
+function showStrength(pwd) {
+  var bar = document.getElementById('strengthBar');
+  var strength = 0;
+  if (pwd.length > 5) strength += 1;
+  if (pwd.match(/[A-Z]/)) strength += 1;
+  if (pwd.match(/[0-9]/)) strength += 1;
+  if (pwd.match(/[^A-Za-z0-9]/)) strength += 1;
+  var colors = ['#dc3545', '#ffc107', '#17a2b8', '#28a745'];
+  bar.style.width = (strength * 25) + '%';
+  bar.style.background = colors[strength-1] || '#ccc';
+}
+</script>
+{% endblock %}

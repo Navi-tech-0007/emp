@@ -1,0 +1,475 @@
+{% extends "main.html" %}
+{% block navbar %}{% endblock %}
+{% block body %}
+  {% include "dashboard_nav.html" %}
+
+  <style>
+    .user-card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      margin-top: 2rem;
+    }
+    .user-card {
+      flex-direction: row;
+      align-items: center;
+      min-width: 0;
+      max-width: 100%;
+      width: 100%;
+      padding: 1.2rem 2rem;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 2px 12px rgba(44,62,80,0.08);
+      transition: box-shadow 0.2s;
+    }
+    .user-card-header,
+    .user-card-info {
+      margin-bottom: 0;
+    }
+    .user-card-header {
+      flex: 1 1 0;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .user-card-name {
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: #4f46e5;
+      word-break: break-word;
+      flex: 1 1 auto;
+    }
+    .user-card-actions {
+      flex-direction: row;
+      gap: 0.7rem;
+    }
+    .user-card-info {
+      font-size: 0.98rem;
+      color: #444;
+      margin-bottom: 0.2rem;
+      word-break: break-word;
+    }
+    .user-card .btn {
+      font-size: 0.97em;
+      padding: 0.4rem 1.1rem;
+      min-width: 70px;
+      margin-bottom: 0;
+    }
+    @media (max-width: 900px) {
+      .user-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem 0.7rem;
+      }
+      .user-card-header {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    }
+    @media (max-width: 600px) {
+      .user-card-list {
+        flex-direction: column;
+        gap: 0.3rem;
+        margin-top: 0.5rem;
+      }
+      .user-card {
+        min-width: 0;
+        max-width: 100vw;
+        padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+        margin: 0;
+        box-shadow: 0 1px 4px rgba(44,62,80,0.07);
+        /* Add this to ensure card height fits content */
+        height: auto;
+      }
+      .user-card-header {
+        margin-bottom: 0.2rem;
+        gap: 0.2rem;
+      }
+      .user-card-name {
+        font-size: 1rem;
+      }
+      .user-card-info {
+        font-size: 0.93rem;
+        margin-bottom: 0.08rem;
+      }
+      .user-card .btn {
+        font-size: 0.93em;
+        padding: 0.28rem 0.6rem;
+        min-width: 54px;
+        margin-bottom: 0;
+        width: 100%; /* Make buttons full width on mobile */
+      }
+      .user-card-actions {
+        flex-direction: column;
+        gap: 0.3rem;
+        width: 100%;
+      }
+    }
+
+    /* Modern modal look */
+    .modal-content {
+      border-radius: 1rem;
+      border: none;
+      box-shadow: 0 4px 32px rgba(44,62,80,0.13);
+    }
+    .modal-header {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .modal-footer {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .input-group-text {
+      background: #f4f6fa;
+      border: none;
+    }
+    .form-control:focus {
+      box-shadow: 0 0 0 2px #6366f122;
+      border-color: #6366f1;
+    }
+  </style>
+
+  <div class="container mt-4">
+    <h3>Users</h3>
+
+    <!-- Search and Filter -->
+    <div class="row mb-3">
+      <div class="col-md-6 mb-2">
+        <input type="text" id="userSearch" class="form-control" placeholder="Search users by name, email, or role...">
+      </div>
+      <div class="col-md-4 mb-2">
+        <select id="departmentFilter" class="form-control">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+            <option value="{{ dept }}">{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="user-card-list">
+      {% for user in users %}
+      <div class="user-card">
+        <div class="user-card-header">
+          <div class="user-card-name">{{ user.name or '-' }}</div>
+          <div class="user-card-actions">
+            
+            {% if session.get('role') in ['hr', 'admin'] %}
+              <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#editUserModal" data-username="{{ user.username }}">Edit</button>
+              <button class="btn btn-warning btn-sm reset-password-btn" data-toggle="modal" data-target="#resetPasswordModal" data-username="{{ user.username }}">Reset Password</button>
+            {% endif %}
+          </div>
+        </div>
+        <div class="user-card-info"><strong>Email:</strong> {{ user.username }}</div>
+        <div class="user-card-info"><strong>Role:</strong> {{ user.role|capitalize }}</div>
+        <div class="user-card-info"><strong>Department:</strong> {{ user.department or '-' }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- User Details Modal -->
+  <div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="userModalLabel">User Details</h5>
+          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+        <div class="modal-body" id="userModalBody">
+          <div class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <form id="editUserForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+            <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+          </div>
+          <div class="modal-body" id="editUserModalBody">
+            <div class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Password Modal -->
+  <div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <form id="resetPasswordForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="resetPasswordModalLabel">Reset Password</h5>
+            <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+          </div>
+          <div class="modal-body" id="resetPasswordModalBody">
+            <div class="alert alert-warning mb-3">
+              <i class="fa fa-exclamation-triangle"></i>
+              Resetting the password will send a reset link or set a new password for this user.
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" name="new_password" class="form-control" required minlength="6" placeholder="Enter new password">
+            </div>
+            <div class="form-group">
+              <label>Confirm Password</label>
+              <input type="password" name="confirm_password" class="form-control" required minlength="6" placeholder="Confirm new password">
+            </div>
+            <input type="hidden" name="username" id="resetPasswordUsername">
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-warning">Reset Password</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="data-container"
+       data-departments='{{ departments | tojson | safe }}'
+       data-roles='{{ roles | tojson | safe }}'>
+  </div>
+
+  <!-- Add this just before </body> -->
+  <div class="toast" id="userToast" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;" data-delay="3000">
+    <div class="toast-header">
+      <strong class="mr-auto" id="toastTitle"></strong>
+      <button type="button" class="ml-2 mb-1 close" data-dismiss="toast">&times;</button>
+    </div>
+    <div class="toast-body" id="toastBody"></div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const container = document.getElementById('data-container');
+    const departments = JSON.parse(container.dataset.departments);
+    const roles = JSON.parse(container.dataset.roles);
+
+    $('#userModal').on('show.bs.modal', function (event) {
+      console.log('User modal opened');
+      var button = $(event.relatedTarget);
+      var username = button.data('username');
+      var modal = $(this);
+      modal.find('#userModalBody').html('<div class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</div>');
+      fetch('/api/user/' + encodeURIComponent(username))
+        .then(res => res.json())
+        .then(user => {
+          modal.find('#userModalBody').html(`
+            <div><strong>Name:</strong> ${user.name || '-'}</div>
+            <div><strong>Email:</strong> ${user.username || '-'}</div>
+            <div><strong>Role:</strong> ${user.role || '-'}</div>
+            <div><strong>Status:</strong> ${user.active !== false ? 'Active' : 'Inactive'}</div>
+            <div><strong>Department:</strong> ${user.department || '-'}</div>
+            <div><strong>Phone:</strong> ${user.number || '-'}</div>
+            <div><strong>Employee ID:</strong> ${user.employee_id || '-'}</div>
+            <div><strong>HR Code:</strong> ${user.hrcode || '-'}</div>
+            <div><strong>Hire Date:</strong> ${user.hire_date || '-'}</div>
+          `);
+        });
+    });
+
+    // Edit User Modal: Populate fields with fetched data
+    $('#editUserModal').on('show.bs.modal', function (event) {
+      var button = $(event.relatedTarget);
+      var username = button.data('username');
+      var modal = $(this);
+      modal.find('#editUserModalBody').html('<div class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</div>');
+      fetch('/api/user/' + encodeURIComponent(username))
+        .then(res => res.json())
+        .then(resp => {
+          var user = resp.user || resp; // support both {user: {...}} and {...}
+          let deptOptions = departments.map(dept =>
+            `<option value="${dept}" ${user.department === dept ? 'selected' : ''}>${dept}</option>`
+          ).join('');
+          let roleOptions = roles.map(role =>
+            `<option value="${role}" ${user.role === role ? 'selected' : ''}>${role.charAt(0).toUpperCase() + role.slice(1)}</option>`
+          ).join('');
+          modal.find('#editUserModalBody').html(`
+            <div class="text-center mb-3">
+              <img src="${user.avatar_url || '/static/default_avatar.png'}" class="rounded-circle shadow" style="width:70px;height:70px;" alt="Avatar">
+              <div class="mt-2 font-weight-bold" style="font-size:1.2rem;">${user.name || ''}</div>
+              <div class="text-muted" style="font-size:0.95rem;">${user.username || ''}</div>
+            </div>
+            <hr>
+            <div class="form-row mb-3">
+              <div class="col">
+                <label class="font-weight-bold">Employee ID</label>
+                <input type="text" class="form-control-plaintext" value="${user.employee_id || ''}" readonly>
+              </div>
+              <div class="col">
+                <label class="font-weight-bold">Status</label>
+                <select name="active" class="form-control">
+                  <option value="true" ${user.active !== false ? 'selected' : ''}>Active</option>
+                  <option value="false" ${user.active === false ? 'selected' : ''}>Inactive</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row mb-3">
+              <div class="col">
+                <label class="font-weight-bold">Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control" value="${user.name || ''}" required>
+              </div>
+              <div class="col">
+                <label class="font-weight-bold">Email <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-envelope"></i></span></div>
+                  <input type="email" name="username" class="form-control" value="${user.username || ''}" required>
+                </div>
+              </div>
+            </div>
+            <div class="form-row mb-3">
+              <div class="col">
+                <label class="font-weight-bold">Role</label>
+                <select name="role" class="form-control">
+                  ${roleOptions}
+                </select>
+              </div>
+              <div class="col">
+                <label class="font-weight-bold">Department</label>
+                <select name="department" class="form-control">
+                  ${deptOptions}
+                </select>
+              </div>
+            </div>
+            <div class="form-row mb-3">
+              <div class="col">
+                <label class="font-weight-bold">Phone</label>
+                <div class="input-group">
+                  <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-phone"></i></span></div>
+                  <input type="text" name="number" class="form-control" value="${user.number || ''}">
+                </div>
+              </div>
+              <div class="col">
+                <label class="font-weight-bold">HR Code</label>
+                <input type="text" name="hrcode" class="form-control" value="${user.hrcode || ''}" data-toggle="tooltip" title="Internal HR reference code">
+              </div>
+            </div>
+            <div class="form-row mb-3">
+              <div class="col">
+                <label class="font-weight-bold">Hire Date</label>
+                <input type="date" name="hire_date" class="form-control" value="${user.hire_date ? user.hire_date.split(' ')[0] : ''}">
+              </div>
+            </div>
+            <input type="hidden" name="original_username" value="${user.username}">
+            <div class="alert alert-info mt-3 mb-0 p-2" style="font-size:0.97em;">
+              <i class="fa fa-info-circle"></i> All fields except Employee ID are editable. Changes are saved instantly.
+            </div>
+          `);
+        })
+        .catch(() => {
+          modal.find('#editUserModalBody').html('<div class="text-danger text-center">Failed to load user data.</div>');
+        });
+    });
+
+    // Handle edit user form submit
+    $('#editUserForm').on('submit', function(e) {
+      e.preventDefault();
+      var form = $(this);
+      var data = {};
+      form.serializeArray().forEach(function(item) {
+        data[item.name] = item.value;
+      });
+      var btn = form.find('button[type="submit"]');
+      btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Saving...');
+      fetch('/api/user/' + encodeURIComponent(data.username), {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(resp => {
+        btn.prop('disabled', false).html('Save Changes');
+        if (resp.success) {
+          $('#editUserModal').modal('hide');
+          showToast('Success', 'User updated successfully!', true);
+          setTimeout(() => location.reload(), 1200);
+        } else {
+          showToast('Error', resp.error || 'Update failed', false);
+        }
+      });
+    });
+
+    // Open modal and set username
+    $('#resetPasswordModal').on('show.bs.modal', function (event) {
+      var button = $(event.relatedTarget);
+      var username = button.data('username');
+      $('#resetPasswordUsername').val(username);
+      $('#resetPasswordForm')[0].reset();
+    });
+
+    // Handle password reset form submit
+    $('#resetPasswordForm').on('submit', function(e) {
+      e.preventDefault();
+      var form = $(this);
+      var username = form.find('[name="username"]').val();
+      var newPassword = form.find('[name="new_password"]').val();
+      var confirmPassword = form.find('[name="confirm_password"]').val();
+      var btn = form.find('button[type="submit"]');
+      if (newPassword !== confirmPassword) {
+        showToast('Error', 'Passwords do not match.', false);
+        return;
+      }
+      btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Resetting...');
+      fetch('/api/user/' + encodeURIComponent(username) + '/reset_password', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ new_password: newPassword })
+      })
+      .then(res => res.json())
+      .then(resp => {
+        btn.prop('disabled', false).html('Reset Password');
+        if (resp.success) {
+          $('#resetPasswordModal').modal('hide');
+          showToast('Success', 'Password reset successfully!', true);
+          setTimeout(() => location.reload(), 1200); // reload page after 1.2s
+        } else {
+          showToast('Error', resp.error || 'Reset failed', false);
+        }
+      })
+      .catch(() => {
+        btn.prop('disabled', false).html('Reset Password');
+        showToast('Error', 'Network error', false);
+      });
+    });
+
+    // Search and filter logic
+    $('#userSearch, #departmentFilter').on('input change', function() {
+      var search = $('#userSearch').val().toLowerCase();
+      var dept = $('#departmentFilter').val();
+      $('.user-card').each(function() {
+        var card = $(this);
+        var name = card.find('.user-card-name').text().toLowerCase();
+        var email = card.find('.user-card-info:contains("Email")').text().toLowerCase();
+        var role = card.find('.user-card-info:contains("Role")').text().toLowerCase();
+        var cardDept = card.find('.user-card-info:contains("Department")').text().toLowerCase();
+        var match = (!search || name.includes(search) || email.includes(search) || role.includes(search));
+        var deptMatch = (!dept || cardDept.includes(dept.toLowerCase()));
+        card.toggle(match && deptMatch);
+      });
+    });
+
+    function showToast(title, message, success=true) {
+      $('#toastTitle').text(title);
+      $('#toastBody').text(message);
+      $('#userToast').removeClass('bg-danger bg-success').addClass(success ? 'bg-success' : 'bg-danger');
+      $('#userToast').toast('show');
+    }
+    
+  </script>
+{% endblock %}

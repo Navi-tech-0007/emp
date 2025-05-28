@@ -1,0 +1,57 @@
+{% extends "main.html" %}
+{% block navbar %}{% endblock %}
+{% block body %}
+  {% include "dashboard_nav.html" %}
+
+<div class="container py-4">
+  <h2 class="mb-4"><i class="fa fa-cogs"></i> Management HUB</h2>
+  <div class="row">
+    <!-- Configure Schedule Card -->
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card shadow-sm h-100 text-center border-0">
+        <div class="card-body">
+          <div class="mb-3">
+            <i class="fa fa-calendar-plus fa-2x"></i>
+          </div>
+          <h5 class="card-title">Configure Schedule</h5>
+          <p class="card-text">Add or update employee schedules and shifts.</p>
+          <a href="{{ url_for('schedule.configure_schedule') }}" class="btn btn-light">Go to Schedule Management</a>
+        </div>
+      </div>
+    </div>
+    <!-- Manage Leave Requests Card -->
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card shadow-sm h-100 text-center border-0">
+        <div class="card-body">
+          <div class="mb-3 position-relative">
+            <i class="fa fa-plane-departure fa-2x"></i>
+            <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+              {{ pending_leave_count }}
+            </span>
+          </div>
+          <h5 class="card-title">Manage Leave Requests</h5>
+          <p class="card-text">Review and approve/reject employee leave requests.</p>
+          <a href="{{ url_for('leave.manage_leave') }}" class="btn btn-light">Go to Leave Management</a>
+        </div>
+      </div>
+    </div>
+    <!-- Add more cards here as needed -->
+  </div>
+</div>
+
+<style>
+.card .fa {
+  color: #0d6efd !important; /* Bootstrap primary color */
+}
+.btn-light {
+  border: 1px solid #0d6efd;
+  color: #0d6efd;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-light:hover, .btn-light:focus {
+  background: #e7f1ff;
+  color: #084298;
+  border-color: #0d6efd;
+}
+</style>
+{% endblock %}

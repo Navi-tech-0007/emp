@@ -1,0 +1,273 @@
+{% extends "main.html" %}
+{% block page_header %}Sign In to Employee Directory{% endblock %}
+{% block body %}
+<style>
+  /* Make the page use flex layout for sticky footer */
+  html, body {
+    height: 100%;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f8f9fa;
+    position: relative;
+    overflow-x: hidden;
+  }
+  .main-content, .container, .container-fluid {
+    flex: 1 0 auto;
+  }
+  footer {
+    flex-shrink: 0;
+  }
+
+  .bg-boxes {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-box {
+    position: absolute;
+    width: 32px; height: 32px;
+    background: rgba(108,99,255,0.08);
+    border-radius: 8px;
+    animation: floatBox 8s infinite alternate;
+  }
+  .bg-box:nth-child(1) { top: 10%; left: 8%; animation-delay: 0s;}
+  .bg-box:nth-child(2) { top: 30%; left: 80%; animation-delay: 1s;}
+  .bg-box:nth-child(3) { top: 60%; left: 15%; animation-delay: 2s;}
+  .bg-box:nth-child(4) { top: 80%; left: 60%; animation-delay: 3s;}
+  .bg-box:nth-child(5) { top: 50%; left: 50%; animation-delay: 4s;}
+  .bg-box:nth-child(6) { top: 20%; left: 60%; animation-delay: 2.5s;}
+  .bg-box:nth-child(7) { top: 75%; left: 30%; animation-delay: 1.5s;}
+  @keyframes floatBox {
+    to { transform: translateY(-20px) scale(1.1);}
+  }
+  .login-card {
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(44,62,80,0.12);
+    border: none;
+    position: relative;
+    z-index: 1;
+  }
+  .login-logo {
+    display: block;
+    margin: 0 auto 2rem auto;
+    height: 90px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  .form-control:focus {
+    border-color: #6c63ff;
+    box-shadow: 0 0 0 0.2rem rgba(108,99,255,.15);
+  }
+  .btn-primary {
+    transition: background 0.2s;
+  }
+  .btn-primary:hover, .btn-primary:focus {
+    background: #4f47c3;
+    border-color: #4f47c3;
+  }
+  .forgot-link {
+    display: block;
+    text-align: right;
+    margin-top: 0.5rem;
+    font-size: 0.95em;
+  }
+  .info-text {
+    color: #555;
+    font-size: 1.08em;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .fade-in { animation: fadeIn 0.5s; }
+  .fade-out { animation: fadeOut 0.5s; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+  .spinner-border-sm { width: 1.2rem; height: 1.2rem; }
+  .password-strength { height: 6px; border-radius: 3px; margin-top: 4px; transition: width 0.3s, background 0.3s; }
+  @keyframes shake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-8px); } 40%, 60% { transform: translateX(8px); } }
+  .shake { animation: shake 0.5s; }
+</style>
+<div class="bg-boxes">
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+  <div class="bg-box"></div>
+</div>
+<div class="container d-flex align-items-center justify-content-center flex-grow-1">
+  <div class="row w-100 justify-content-center">
+    <div class="col-md-5">
+      <div class="card login-card shadow">
+        <div class="card-body">
+          <div class="text-center">
+            <img src="{{ url_for('static', filename='logo_gt.png') }}" alt="Logo" class="login-logo">
+          </div>
+          <h3 class="card-title text-center mb-3">Login</h3>
+          <div class="info-text" id="infoText">
+            Welcome back! Enter your email to sign in.<br>
+            <span class="text-muted">If you don’t have an account, you’ll be guided to registration.</span>
+          </div>
+          <div id="step1">
+            <div class="form-group">
+              <label for="login_email" class="font-weight-bold">Email</label>
+              <input type="email" id="login_email" class="form-control" placeholder="Enter your email" required autofocus
+                onkeydown="if(event.key==='Enter'){event.preventDefault();checkLoginEmail();}">
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="nextBtn" onclick="checkLoginEmail()">
+              <span id="emailSpinner" class="spinner-border spinner-border-sm d-none"></span>
+              Next
+            </button>
+            <div id="login_email_error" class="text-danger mt-2"></div>
+          </div>
+          <div id="showEmail" class="text-center mb-2" style="display:none;"></div>
+          <form id="login_form" method="POST" style="display:none;" autocomplete="off">
+            {{ form.hidden_tag() }}
+            <input type="hidden" name="username" id="hidden_login_email">
+            <div class="form-group">
+              <label for="login_password" class="font-weight-bold">Password</label>
+              <div class="input-group mb-2">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required
+                  oninput="showStrength(this.value)">
+                <div class="input-group-append">
+                  <span class="input-group-text" onclick="togglePassword('password', this)" style="cursor:pointer;">
+                    <i class="fa fa-eye"></i>
+                  </span>
+                </div>
+              </div>
+              <div class="password-strength bg-secondary" id="strengthBar" style="width:0;"></div>
+              <a href="/forgot" class="forgot-link">Forgot password?</a>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+              <span id="loginSpinner" class="spinner-border spinner-border-sm d-none"></span>
+              Login
+            </button>
+          </form>
+          <div class="text-center mb-2">
+            <small>
+              <i class="fa fa-lock text-success"></i>
+              Your credentials are encrypted and secure.
+              <br>
+              <a href="{{ url_for('main.contact') }}" class="text-info">Need help?</a>
+            </small>
+          </div>
+          {% if error %}
+          <div class="alert alert-danger mt-3">{{ error }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="greeting" class="alert alert-info text-center d-none"></div>
+<footer class="mt-auto py-4 bg-light text-center">
+  <div class="container">
+    <img src="{{ url_for('static', filename='logo_gt.png') }}" alt="GlobalTech Logo" style="height:32px;">
+    <div class="mt-2">
+      <small class="text-muted">&copy; {{ 2025 }} GlobalTech.com &mdash; All rights reserved.</small>
+      <br>
+      <small>
+        <a href="{{ url_for('main.about') }}">About</a> &middot;
+        <a href="{{ url_for('main.contact') }}">Contact</a>
+      </small>
+    </div>
+  </div>
+</footer>
+<script>
+function checkLoginEmail() {
+  console.log("checkLoginEmail called");
+  let email = document.getElementById('login_email').value;
+  if (!email) {
+    document.getElementById('login_email_error').textContent = "Please enter your email.";
+    return;
+  }
+  document.getElementById('login_email_error').textContent = "";
+  document.getElementById('emailSpinner').classList.remove('d-none');
+  fetch('/check_email', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email})
+  })
+  .then(res => res.json())
+  .then(data => { // <-- FIXED HERE
+    document.getElementById('emailSpinner').classList.add('d-none');
+    if (data.exists) {
+      // Update info text for password step
+      document.getElementById('infoText').innerHTML = `
+        <strong>Welcome back!</strong> Please enter your password to continue.<br>
+        <span class="text-muted">If you forgot your password, use the link below.</span>
+      `;
+      // Fade out step1, fade in login_form
+      document.getElementById('step1').classList.add('fade-out');
+      setTimeout(function() {
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('login_form').style.display = 'block';
+        document.getElementById('login_form').classList.add('fade-in');
+        document.getElementById('hidden_login_email').value = email;
+        document.getElementById('showEmail').textContent = email;
+        document.getElementById('showEmail').style.display = 'block';
+        setTimeout(function() {
+          document.getElementById('login_form').classList.remove('fade-in');
+          document.getElementById('step1').classList.remove('fade-out');
+          document.getElementById('password').focus();
+        }, 500);
+      }, 500);
+    } else {
+      window.location.href = '/register?email=' + encodeURIComponent(email);
+    }
+  })
+  .catch(() => {
+    document.getElementById('emailSpinner').classList.add('d-none');
+    document.getElementById('login_email_error').textContent = "Server error. Please try again.";
+  });
+}
+
+function togglePassword(fieldId, toggleIcon) {
+  var pwd = document.getElementById(fieldId);
+  if (pwd.type === "password") {
+    pwd.type = "text";
+    toggleIcon.innerHTML = '<i class="fa fa-eye-slash"></i>';
+  } else {
+    pwd.type = "password";
+    toggleIcon.innerHTML = '<i class="fa fa-eye"></i>';
+  }
+}
+
+function showStrength(pwd) {
+  var bar = document.getElementById('strengthBar');
+  var strength = 0;
+  if (pwd.length > 5) strength += 1;
+  if (pwd.match(/[A-Z]/)) strength += 1;
+  if (pwd.match(/[0-9]/)) strength += 1;
+  if (pwd.match(/[^A-Za-z0-9]/)) strength += 1;
+  var colors = ['#dc3545', '#ffc107', '#17a2b8', '#28a745'];
+  bar.style.width = (strength * 25) + '%';
+  bar.style.background = colors[strength-1] || '#ccc';
+}
+
+document.getElementById('login_form').onsubmit = function() {
+  document.getElementById('loginSpinner').classList.remove('d-none');
+  document.getElementById('loginBtn').disabled = true;
+  setTimeout(function() {
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginSpinner').classList.add('d-none');
+  }, 2000);
+  // Optionally, return true to allow form submission, or false to prevent
+  // return true;
+};
+
+function setFullHeight() {
+  // Use visualViewport if available for better mobile support
+  var vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.querySelector('.container.d-flex').style.minHeight = vh + 'px';
+}
+window.addEventListener('resize', setFullHeight);
+window.addEventListener('orientationchange', setFullHeight);
+document.addEventListener('DOMContentLoaded', setFullHeight);
+</script>
+{% endblock %}

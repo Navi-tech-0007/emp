@@ -1,0 +1,188 @@
+{% extends "main.html" %}
+{% block navbar %}{% endblock %}
+{% block body %}
+  {% include "dashboard_nav.html" %}
+  
+  <!-- Add before </body> -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<div class="container mt-4">
+  <h3>Employee Directory</h3>
+  <div class="row mb-3">
+    <div class="col-md-3 mb-2 mb-md-0">
+      <select id="roleFilter" class="form-control">
+        <option value="">All Roles</option>
+        <option value="admin">Admin</option>
+        <option value="hr">HR</option>
+        <option value="root">Root</option>
+        <option value="user">User</option>
+      </select>
+    </div>
+    <div class="col-md-3 mb-2 mb-md-0">
+      <select id="deptFilter" class="form-control">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+          <option value="{{ dept }}">{{ dept }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <input type="text" id="empSearch" class="form-control" placeholder="Search by name, email, or department...">
+    </div>
+  </div>
+
+  <div class="employee-card-list row">
+    {% for emp in employees %}
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
+      <div class="employee-card card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex align-items-center mb-2">
+            {% if emp.photo_url %}
+              <img src="{{ emp.photo_url }}" alt="Photo" class="rounded-circle mr-2" width="48" height="48">
+            {% else %}
+              <span class="fa fa-user-circle fa-2x text-secondary mr-2" style="font-size:2.5rem;"></span>
+            {% endif %}
+            <div>
+              <div class="font-weight-bold" style="font-size:1.1rem;">{{ emp.name }}</div>
+              <div class="text-muted" style="font-size:0.97rem;">{{ emp.username }}</div>
+            </div>
+          </div>
+          <div class="mb-1"><strong>Role:</strong> {{ emp.role|capitalize }}</div>
+          <div class="mb-1"><strong>Department:</strong> {{ emp.department or '-' }}</div>
+          <div class="mb-1"><strong>Status:</strong>
+            {% if emp.active %}
+              <span class="badge badge-success">Active</span>
+            {% else %}
+              <span class="badge badge-secondary">Inactive</span>
+            {% endif %}
+          </div>
+          <div class="mt-auto d-flex flex-wrap gap-2">
+            <a href="{{ url_for('main.profile', username=emp.username) }}" class="btn btn-info btn-sm flex-fill">
+              <i class="fa fa-eye"></i> View
+            </a>
+            {% if session['role'] in ['hr', 'admin', 'root', 'manager'] %}
+            <a href="#" class="btn btn-outline-primary btn-sm flex-fill edit-user-btn d-flex justify-content-center align-items-center"
+               data-employee-id="{{ emp.employee_id }}">
+              <i class="fa fa-pencil-alt mr-1"></i>
+              <span>Edit</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if session['role'] in ['hr', 'admin', 'root'] %}
+  <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
+    <select id="bulkAction" class="form-control w-auto mr-2 mb-2 mb-md-0">
+      <option value="">Bulk Action</option>
+      <option value="activate">Activate</option>
+      <option value="deactivate">Deactivate</option>
+    </select>
+    <button id="applyBulk" class="btn btn-primary btn-sm mr-2 mb-2 mb-md-0">Apply</button>
+    <a href="{{ url_for('admin.export_directory') }}" class="btn btn-outline-secondary mb-2 mb-md-0">
+      <i class="fa fa-download"></i> Export CSV
+    </a>
+  </div>
+  {% endif %}
+
+<style>
+.employee-card-list {
+  margin-top: 1rem;
+}
+.employee-card {
+  border-radius: 1rem;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+}
+.employee-card .btn {
+  min-width: 80px;
+}
+.btn-outline-primary .fa-pencil-alt {
+  color: #007bff !important;
+}
+.employee-card .edit-user-btn {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Desktop: buttons in one line */
+.mt-auto.d-flex.flex-wrap.gap-2 {
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+/* Mobile: stack buttons vertically */
+@media (max-width: 600px) {
+  .mt-auto.d-flex.flex-wrap.gap-2 {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .employee-card .btn {
+    width: 100%;
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem;
+  }
+  .employee-card .flex-fill {
+    flex: 1 1 100%;
+  }
+  .employee-card-list .col-12 {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+}
+</style>
+
+<script>
+function filterCards() {
+  var role = document.getElementById('roleFilter').value.toLowerCase();
+  var dept = document.getElementById('deptFilter').value.toLowerCase();
+  var search = document.getElementById('empSearch').value.toLowerCase();
+  document.querySelectorAll('.employee-card-list > div').forEach(function(cardCol) {
+    var card = cardCol.querySelector('.employee-card');
+    var name = card.querySelector('.font-weight-bold').textContent.toLowerCase();
+    var username = card.querySelector('.text-muted').textContent.toLowerCase();
+    var roleText = card.querySelector('.mb-1:nth-of-type(1)').textContent.toLowerCase();
+    var deptText = card.querySelector('.mb-1:nth-of-type(2)').textContent.toLowerCase();
+    var show = true;
+    if (role && !roleText.includes(role)) show = false;
+    if (dept && !deptText.includes(dept)) show = false;
+    if (search && !(name.includes(search) || username.includes(search) || deptText.includes(search))) show = false;
+    cardCol.style.display = show ? '' : 'none';
+  });
+}
+document.getElementById('roleFilter').addEventListener('change', filterCards);
+document.getElementById('deptFilter').addEventListener('keyup', filterCards);
+document.getElementById('empSearch').addEventListener('keyup', filterCards);
+
+document.getElementById('applyBulk')?.addEventListener('click', function() {
+  const action = document.getElementById('bulkAction').value;
+  const selected = Array.from(document.querySelectorAll('.selectRow:checked')).map(cb => cb.value);
+  if (!action || selected.length === 0) {
+    alert('Select at least one user and an action.');
+    return;
+  }
+  fetch('/bulk_user_action', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({action, users: selected})
+  }).then(res => location.reload());
+});
+
+$(document).on('click', '.edit-user-btn', function(e) {
+  e.preventDefault();
+  var employeeId = $(this).data('employee-id');
+  $('#editUserModalBody').html('<div class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</div>');
+  $('#editUserModal').modal('show');
+  // Fetch the edit form via AJAX
+  $.get('/edit_form/' + employeeId, function(html) {
+    $('#editUserModalBody').html(html);
+  });
+});
+</script>
+{% endblock %}

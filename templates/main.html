@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Welcome - Employee Directory{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,600&display=swap" rel="stylesheet">
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <!-- Particles.js -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <style>
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .navbar { background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+    header.jumbotron { background: #6f42c1; color: #fff; height: 75vh; position: relative; overflow: hidden; margin-bottom: 0; }
+    #particles-js { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1; }
+    header.jumbotron .content { position: relative; z-index: 2; text-align: center; }
+    .footer { padding: 1.5rem 0; text-align: center; color: #888; flex-shrink: 0; }
+    .main-content, .container, .container-fluid { flex: 1 0 auto; }
+
+    /* Mobile adaptations */
+    @media (max-width: 600px) {
+      .navbar-brand {
+        font-size: 1.1em !important;
+        letter-spacing: 0.5px !important;
+        padding-left: 0 !important;
+      }
+      .navbar {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+      .navbar-nav .nav-link {
+        font-size: 1em;
+        padding: 0.5rem 0.8rem;
+      }
+      header.jumbotron {
+        height: auto;
+        min-height: 320px;
+        padding: 2.5rem 0 1.5rem 0;
+      }
+      header.jumbotron .content h1 {
+        font-size: 2rem;
+      }
+      .container, .container-fluid {
+        padding-left: 0.7rem !important;
+        padding-right: 0.7rem !important;
+      }
+      .card.p-4 {
+        padding: 1.2rem !important;
+      }
+      .footer {
+        font-size: 0.97em;
+        padding: 1rem 0;
+      }
+    }
+
+    #page-loading-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.7);
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #page-loading-overlay.active {
+      display: flex !important;
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* Loading overlay styles */
+    #global-loading-overlay {
+      position: fixed;
+      z-index: 20000;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s;
+    }
+    #global-loading-overlay .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      color: #2176c1;
+    }
+    #global-loading-overlay.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  {% block navbar %}
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" style="border-bottom:1.5px solid #ececec;">
+    <div class="container">
+      <!-- Branding on the left -->
+      <a class="navbar-brand font-weight-bold" href="{{ url_for('main.home') }}" style="color:#6c63ff; font-size:1.5em; letter-spacing:1px;">
+        GlobalTech
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ml-auto align-items-lg-center">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.about') }}"><i class="fa fa-info-circle"></i> About</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.contact') }}"><i class="fa fa-envelope"></i> Contact</a>
+          </li>
+          {% if not session.get('user') and request.endpoint != 'auth.login' and request.endpoint != 'registration.register' %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('registration.register') }}"><i class="fa fa-user-plus"></i> Register</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fa fa-sign-in"></i> Login</a>
+            </li>
+          {% elif session.get('user') %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-user-circle"></i> <strong>{{ session['user'] }}</strong>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                <a class="dropdown-item" href="{{ url_for('main.profile', username=session['user']) }}"><i class="fa fa-user"></i> My Profile</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="fa fa-sign-out"></i> Logout</a>
+              </div>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+  {% endblock %}
+
+
+  {% block head %}
+  <style>
+    /* Loading overlay styles */
+    #global-loading-overlay {
+      position: fixed;
+      z-index: 20000;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s;
+    }
+    #global-loading-overlay .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      color: #2176c1;
+    }
+    #global-loading-overlay.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+  {% endblock %}
+
+  {% block body %}
+  <!-- Hero with interactive background -->
+  <header class="jumbotron d-flex align-items-center justify-content-center">
+    <div id="particles-js"></div>
+    <div class="content container">
+      <h1 class="display-4 font-weight-bold">{% block page_header %}Welcome to Employee Directory{% endblock %}</h1>
+      <p class="lead mb-4">Effortlessly manage, search, and connect with your colleagues.<br><span class="font-weight-bold">Secure, modern, and built for your team.</span></p>
+      {% if not session.get('user') %}
+        <a class="btn btn-light btn-lg" href="{{ url_for('auth.login') }}">
+          <i class="fa fa-sign-in"></i> Login
+        </a>
+      {% else %}
+        <a class="btn btn-light btn-lg" href="{{ url_for('main.dashboard', username=session['user']) }}">
+          <i class="fa fa-user"></i> My Profile
+        </a>
+        <a class="btn btn-outline-light btn-lg ml-2" href="{{ url_for('main.directory') }}">
+          <i class="fa fa-users"></i> Directory
+        </a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- Features Section -->
+  <div class="container mt-5">
+    <div class="row text-center">
+      <div class="col-md-4 mb-4">
+        <div class="card p-4">
+          <i class="fa fa-search fa-2x mb-3 text-primary"></i>
+          <h5>Smart Search</h5>
+          <p>Find employees by name, department, or role instantly.</p>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="card p-4">
+          <i class="fa fa-lock fa-2x mb-3 text-primary"></i>
+          <h5>Secure & Private</h5>
+          <p>Your data is protected with enterprise-grade security.</p>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="card p-4">
+          <i class="fa fa-users fa-2x mb-3 text-primary"></i>
+          <h5>Team Collaboration</h5>
+          <p>Connect and celebrate your colleagues with ease.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>&copy; {{ 2025 }} Employee Directory &mdash; Empowering your workplace.</span><br>
+    <small><a href="{{ url_for('main.about') }}">About</a> &middot; <a href="{{ url_for('main.contact') }}">Contact</a></small>
+  </div>
+
+  <!-- Login Modal -->
+  <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Employee Login</h5>
+          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+        <form action="{{ url_for('auth.login') }}" method="post">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="login-username">Username</label>
+              <input type="text" class="form-control" id="login-username" name="username" required>
+            </div>
+            <div class="form-group">
+              <label for="login-password">Password</label>
+              <input type="password" class="form-control" id="login-password" name="password" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="page-loading-overlay" style="display:none;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.7);align-items:center;justify-content:center;">
+    <div>
+      <div class="spinner-border text-primary" style="width:3rem;height:3rem;" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+      <div style="text-align:center;color:#4f46e5;font-weight:600;margin-top:1rem;">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="global-loading-overlay">
+    <div class="spinner-border" role="status" aria-label="Loading"></div>
+  </div>
+  <script>
+    // Hide loading overlay when page is fully loaded
+    window.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('global-loading-overlay').classList.add('hide');
+      setTimeout(() => {
+        document.getElementById('global-loading-overlay').style.display = 'none';
+      }, 350);
+    });
+  </script>
+  {% endblock %}
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script>
+    particlesJS('particles-js', {
+      particles: { number: { value: 80 }, size: { value: 3 }, color: { value: '#ffffff' }, move: { enable: true, speed: 2 } },
+      interactivity: { events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } } }
+    });
+  </script>
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+  var overlay = document.getElementById('page-loading-overlay');
+  document.body.addEventListener('click', function(e) {
+    var target = e.target.closest('a');
+        if (
+          target &&
+          target.href &&
+          !target.href.startsWith('javascript:') &&
+          target.target !== '_blank' &&
+          !target.hasAttribute('data-no-loader')
+        ) {
+          overlay.classList.add('active');
+        }
+      });
+    });
+    </script>
+  <script>
+  function showCopyToast(msg) {
+    let $toast = $('#copy-toast');
+    if (!$toast.length) {
+      $toast = $('<div id="copy-toast"></div>').css({
+        position: 'fixed',
+        top: '70px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: '#343a40',
+        color: '#fff',
+        padding: '10px 24px',
+        borderRadius: '6px',
+        zIndex: 2000,
+        fontWeight: 600,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+      }).appendTo('body');
+    }
+    $toast.text(msg).fadeIn(200);
+    // Hide after 3 seconds
+    setTimeout(() => $toast.fadeOut(400), 3000);
+  }
+  </script>
+  <script>
+  // Auto-dismiss all flash messages after 5 seconds
+  setTimeout(function() {
+    $('#flash-overlay .alert').alert('close');
+  }, 5000);
+</script>
+</body>
+</html>

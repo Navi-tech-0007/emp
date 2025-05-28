@@ -1,0 +1,59 @@
+
+/* ====== DEFAULT DASHBOARD THEME ====== */
+:root {
+  --color-primary: #1E3A8A;
+  --color-accent:  #3B82F6;
+  --color-bg:      #F7FAFC;
+  --color-text:    #2D3748;
+  --color-muted:   #718096;
+}
+
+/* ====== LOGIN/WELCOME PAGE THEME ====== */
+.login-theme {
+  --color-primary: #5A3E85;
+  --color-accent:  #7F56D9;
+}
+
+/* ====== BASE STYLES ====== */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Poppins', sans-serif;
+  color: var(--color-text);
+}
+
+.button {
+  background-color: var(--color-primary);
+  color: white;
+  padding: 0.6em 1.2em;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.button:hover {
+  background-color: var(--color-accent);
+}
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 1.5em;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.text-muted {
+  color: var(--color-muted);
+  font-size: 0.9em;
+}

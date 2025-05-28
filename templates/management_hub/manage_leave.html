@@ -1,0 +1,303 @@
+{% extends "main.html" %}
+{% block navbar %}{% endblock %}
+{% block body %}
+  {% include "dashboard_nav.html" %}
+
+ 
+
+  <div class="container-fluid" style="max-width: 1200px;">
+    <div class="card shadow rounded-4 mt-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="mb-0"><i class="fa fa-plane-departure text-primary"></i> Manage Leave Requests</h2>
+          <span class="text-muted small">Total Requests: <b>{{ leave_requests|length }}</b></span>
+        </div>
+        <p class="text-muted mb-4">Review, approve, reject, or cancel employee leave requests. Use filters to narrow results.</p>
+
+        <form method="get" class="row g-2 align-items-end mb-4" id="filterForm">
+          <div class="col-md-4">
+            <label for="department" class="form-label mb-1"><i class="fa fa-building"></i> Department</label>
+            <select name="department" id="department" class="form-select form-select-sm" required>
+              <option value="">Select...</option>
+              {% for dept in departments %}
+                <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="status" class="form-label mb-1"><i class="fa fa-filter"></i> Status</label>
+            <select name="status" id="status" class="form-select form-select-sm">
+              <option value="">All</option>
+              <option value="Pending" {% if request.args.get('status') == 'Pending' %}selected{% endif %}>Pending</option>
+              <option value="Approved" {% if request.args.get('status') == 'Approved' %}selected{% endif %}>Approved</option>
+              <option value="Rejected" {% if request.args.get('status') == 'Rejected' %}selected{% endif %}>Rejected</option>
+              <option value="Cancelled" {% if request.args.get('status') == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="employee" class="form-label mb-1"><i class="fa fa-user"></i> Employee</label>
+            <input type="text" name="employee" id="employee" class="form-control form-control-sm" placeholder="Name or ID" value="{{ request.args.get('employee', '') }}">
+          </div>
+        </form>
+
+        <input type="hidden" name="department" value="{{ flask_request.args.get('department', '') }}">
+        <input type="hidden" name="status_filter" value="{{ flask_request.args.get('status', '') }}">
+        <input type="hidden" name="employee" value="{{ flask_request.args.get('employee', '') }}">
+
+        <script>
+function updateFilters() {
+  var params = new URLSearchParams(window.location.search);
+  params.set('department', document.getElementById('department').value);
+  params.set('status', document.getElementById('status').value);
+  params.set('employee', document.getElementById('employee').value);
+
+  // Replace current URL (no new history entry)
+  window.location.replace(window.location.pathname + '?' + params.toString());
+}
+
+document.getElementById('department').addEventListener('change', updateFilters);
+document.getElementById('status').addEventListener('change', updateFilters);
+
+let empInput = document.getElementById('employee');
+let debounceTimer;
+empInput.addEventListener('input', function() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(updateFilters, 500);
+});
+        </script>
+
+        {% if not selected_department %}
+          <div class="alert alert-info mt-4">Please select a department to view leave requests.</div>
+        {% else %}
+          <div class="table-responsive rounded-3 shadow-sm">
+            <table class="table table-hover align-middle modern-table mb-0">
+              <thead class="sticky-top bg-light">
+                <tr>
+                  <th></th>
+                  <th>Employee</th>
+                  <th>Type</th>
+                  <th>Dates</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Requested</th>
+                  <th>Reviewed By</th>
+                  <th>Reviewed At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for request in leave_requests %}
+                  <tr>
+                    <td>
+                      <img src="{{ request.avatar_url or url_for('static', filename='default_avatar.png') }}"
+                           alt="avatar"
+                           class="rounded-circle border"
+                           style="width:36px;height:36px;object-fit:cover;"
+                           title="{{ request.employee_name }}">
+                    </td>
+                    <td>
+                      <span class="fw-bold">{{ request.employee_name }}</span>
+                      <br>
+                      <span class="text-muted small">{{ request.employee_id or '' }}</span>
+                    </td>
+                    <td>
+                      <span class="badge rounded-pill 
+                        {% if request.leave_type == 'Vacation' %}bg-info text-dark
+                        {% elif request.leave_type == 'Sick' %}bg-warning text-dark
+                        {% elif request.leave_type == 'Personal' %}bg-primary
+                        {% else %}bg-secondary{% endif %}">
+                        <i class="fa fa-plane"></i> {{ request.leave_type }}
+                      </span>
+                    </td>
+                    <td>
+                      <span title="From">{{ request.start_date }}</span>
+                      <i class="fa fa-arrow-right mx-1 text-muted"></i>
+                      <span title="To">{{ request.end_date }}</span>
+                      <br>
+                      <span class="text-muted small">
+                        {% if request.start_date and request.end_date %}
+                          {{ (request.end_date - request.start_date).days + 1 }} day{{ 's' if (request.end_date - request.start_date).days != 0 else '' }}
+                        {% else %}
+                          N/A
+                        {% endif %}
+                      </span>
+                    </td>
+                    <td>
+                      <span title="{{ request.reason or 'No reason provided' }}">
+                        {{ request.reason or '-' }}
+                      </span>
+                    </td>
+                    <td>
+                      {% if request.status == 'Approved' %}
+                        <span class="badge bg-success"><i class="fa fa-check-circle"></i> Approved</span>
+                      {% elif request.status == 'Rejected' %}
+                        <span class="badge bg-danger"><i class="fa fa-times-circle"></i> Rejected</span>
+                      {% elif request.status == 'Cancelled' %}
+                        <span class="badge bg-warning text-dark"><i class="fa fa-ban"></i> Cancelled</span>
+                      {% else %}
+                        <span class="badge bg-secondary"><i class="fa fa-hourglass-half"></i> Pending</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span title="{{ request.requested_at }}">{{ request.requested_at.strftime('%Y-%m-%d %H:%M') if request.requested_at else '-' }}</span>
+                    </td>
+                    <td>
+                      <span title="{{ request.reviewed_by or '-' }}">{{ request.reviewed_by or '-' }}</span>
+                    </td>
+                    <td>
+                      <span title="{{ request.reviewed_at or '-' }}">{{ request.reviewed_at.strftime('%Y-%m-%d %H:%M') if request.reviewed_at else '-' }}</span>
+                    </td>
+                    <td>
+                      <div class="d-flex flex-row flex-wrap align-items-center gap-2">
+                        <form class="status-form m-0 p-0" onsubmit="return false;">
+                          <select name="status" class="form-select form-select-sm status-select" data-request-id="{{ request.id }}">
+                            <option value="">Change</option>
+                            <option value="Pending" {% if request.status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Approved" {% if request.status == 'Approved' %}selected{% endif %}>Approved</option>
+                            <option value="Rejected" {% if request.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                            <option value="Cancelled" {% if request.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                          </select>
+                          <button type="button"
+                                  class="btn btn-outline-success shadow-sm rounded-circle ms-1 confirm-status-btn"
+                                  style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;"
+                                  data-request-id="{{ request.id }}"
+                                  data-employee="{{ request.employee_name }}"
+                                  data-type="{{ request.leave_type }}"
+                                  data-dates="{{ request.start_date }} to {{ request.end_date }}"
+                                  data-reason="{{ request.reason }}"
+                                  data-current-status="{{ request.status }}"
+                                  title="Confirm status change">
+                            <i class="fa fa-check"></i>
+                          </button>
+                          <input type="hidden" name="department" value="{{ flask_request.args.get('department', '') }}">
+                          <input type="hidden" name="status_filter" value="{{ flask_request.args.get('status', '') }}">
+                          <input type="hidden" name="employee" value="{{ flask_request.args.get('employee', '') }}">
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+
+        {% if selected_department and leave_requests|length == 0 %}
+          <div class="alert alert-info mt-4">No leave requests available.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Place this at the end of your body block -->
+  <div class="modal fade" id="statusConfirmModal" tabindex="-1" aria-labelledby="statusConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="statusConfirmForm" method="post">
+          <div class="modal-header">
+            <h5 class="modal-title" id="statusConfirmModalLabel">Confirm Status Change</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div><b>Employee:</b> <span id="modalEmployee"></span></div>
+            <div><b>Type:</b> <span id="modalType"></span></div>
+            <div><b>Dates:</b> <span id="modalDates"></span></div>
+            <div><b>Reason:</b> <span id="modalReason"></span></div>
+            <div><b>Current Status:</b> <span id="modalCurrentStatus"></span></div>
+            <div><b>New Status:</b> <span id="modalNewStatus"></span></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Confirm</button>
+          </div>
+          <input type="hidden" name="status" id="modalStatusInput">
+          <input type="hidden" name="department" id="modalDepartmentInput">
+          <input type="hidden" name="status_filter" id="modalStatusFilterInput">
+          <input type="hidden" name="employee" id="modalEmployeeInput">
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.querySelectorAll('.confirm-status-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var row = btn.closest('.status-form');
+      var select = row.querySelector('.status-select');
+      var newStatus = select.value;
+      if (!newStatus) {
+        alert('Please select a status.');
+        return;
+      }
+      // Fill modal details
+      document.getElementById('modalEmployee').textContent = btn.dataset.employee;
+      document.getElementById('modalType').textContent = btn.dataset.type;
+      document.getElementById('modalDates').textContent = btn.dataset.dates;
+      document.getElementById('modalReason').textContent = btn.dataset.reason;
+      document.getElementById('modalCurrentStatus').textContent = btn.dataset.currentStatus;
+      document.getElementById('modalNewStatus').textContent = newStatus;
+
+      // Set hidden inputs for form submission
+      document.getElementById('modalStatusInput').value = newStatus;
+      document.getElementById('modalDepartmentInput').value = row.querySelector('input[name="department"]').value;
+      document.getElementById('modalStatusFilterInput').value = row.querySelector('input[name="status_filter"]').value;
+      document.getElementById('modalEmployeeInput').value = row.querySelector('input[name="employee"]').value;
+
+      // Set form action
+      var requestId = btn.dataset.requestId;
+      document.getElementById('statusConfirmForm').action = "/update_leave_status/" + requestId;
+
+      // Show modal (Bootstrap 5)
+      var modal = new bootstrap.Modal(document.getElementById('statusConfirmModal'));
+      modal.show();
+    });
+  });
+  </script>
+{% endblock %}
+
+{% block styles %}
+  <style>
+    .modern-table th, .modern-table td { vertical-align: middle; white-space: nowrap; }
+    .modern-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 2; }
+    .modern-table tr { transition: background 0.15s; }
+    .modern-table tbody tr:hover { background: #f1f7ff; }
+    .modern-table img { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .modern-table .btn-group .btn { margin-right: 2px; }
+    .modern-table .badge, .modern-table .rounded-pill { font-size: 90%; }
+    .card { border: none; }
+    .card-body { padding: 2rem; }
+    .form-label { font-weight: 500; }
+    .form-select, .form-control { border-radius: 0.5rem; }
+    .table-responsive { border-radius: 1rem; overflow: hidden; }
+    @media (max-width: 900px) {
+      .modern-table th, .modern-table td { font-size: 13px; }
+      .card-body { padding: 1rem; }
+    }
+    .status-select {
+      min-width: 110px;
+      border-radius: 2rem;
+      border: 1px solid #0d6efd;
+      color: #0d6efd;
+      background: #f8faff;
+      padding: 0.2rem 0.8rem;
+      font-size: 0.95em;
+      transition: border 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 4px rgba(13,110,253,0.04);
+      margin-right: 4px;
+    }
+    .status-select:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
+    }
+    .btn-group .btn {
+      min-width: 36px;
+      padding: 0.35rem 0.7rem;
+      border-radius: 2rem !important;
+      font-size: 1em;
+    }
+    .btn-outline-success:hover, .btn-outline-danger:hover, .btn-outline-warning:hover {
+      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+      background: #f8faff;
+    }
+  </style>
+{% endblock %}
