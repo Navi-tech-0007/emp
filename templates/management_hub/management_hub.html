@@ -1,8 +1,24 @@
-{% extends "main.html" %}
-{% block navbar %}{% endblock %}
-{% block body %}
-  {% include "dashboard_nav.html" %}
+{% extends "base.html" %}
 
+{% block extra_css %}
+<style>
+.card .fa {
+  color: #0d6efd !important; /* Bootstrap primary color */
+}
+.btn-light {
+  border: 1px solid #0d6efd;
+  color: #0d6efd;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-light:hover, .btn-light:focus {
+  background: #e7f1ff;
+  color: #084298;
+  border-color: #0d6efd;
+}
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="container py-4">
   <h2 class="mb-4"><i class="fa fa-cogs"></i> Management HUB</h2>
   <div class="row">
@@ -38,20 +54,4 @@
     <!-- Add more cards here as needed -->
   </div>
 </div>
-
-<style>
-.card .fa {
-  color: #0d6efd !important; /* Bootstrap primary color */
-}
-.btn-light {
-  border: 1px solid #0d6efd;
-  color: #0d6efd;
-  transition: background 0.2s, color 0.2s;
-}
-.btn-light:hover, .btn-light:focus {
-  background: #e7f1ff;
-  color: #084298;
-  border-color: #0d6efd;
-}
-</style>
 {% endblock %}

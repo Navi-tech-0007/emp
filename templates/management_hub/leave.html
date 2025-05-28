@@ -1,8 +1,6 @@
-{% extends "main.html" %}
-{% block navbar %}{% endblock %}
-{% block body %}
-{% include "dashboard_nav.html" %}
-{% set months = [] %}
+{% extends "base.html" %}
+
+{% block extra_css %}
 <style>
   body {
     background: #f8f9fa;
@@ -51,6 +49,7 @@
     color: #0d47a1;
   }
   .leave-history-table th, .leave-history-table td {
+    text-align: center;
     vertical-align: middle !important;
     font-size: 1rem;
     background: #fff;
@@ -207,8 +206,11 @@
     outline: none;
   }
 </style>
+{% endblock %}
 
-<div class="container" style="max-width: 1200px;">
+{% block content %}
+{% set months = [] %}
+<div class="container main-content-spacing" style="margin-top: 10px; min-height:200px;">
   <div class="row">
     <!-- Leave Balances Panel -->
     <div class="col-lg-4 mb-4">
@@ -229,20 +231,24 @@
           </table>
         </div>
       </div>
-      <button type="button" class="btn info-btn btn-block mb-3" data-toggle="modal" data-target="#leaveInfoModal">
+      <button type="button" class="btn info-btn btn-block mb-3" data-bs-toggle="modal" data-bs-target="#leaveInfoModal">
         <i class="fa fa-question-circle"></i> Leave Request Policy
       </button>
     </div>
     <!-- Leave Request Form -->
-    <div class="col-lg-8 mb-4">
+    <div class="col-lg-8 col-md-10 mx-auto mb-4">
       <div class="card leave-card">
-        <div class="leave-card-header" style="background: var(--color-accent, #17a2b8);">
-          <i class="fa fa-paper-plane"></i> Request New Leave
+        <div class="leave-card-header d-flex justify-content-between align-items-center" style="background: #f7f7f9;">
+          <span><i class="fa fa-paper-plane"></i> Request New Leave</span>
+          <!-- Policy button (visible only if policy exists) -->
+          <button type="button" class="btn info-btn ms-2 d-none" id="policyBtn" data-bs-toggle="modal" data-bs-target="#leaveInfoModal">
+            <i class="fa fa-question-circle"></i> Leave Policy
+          </button>
         </div>
         <div class="card-body">
           <form method="post" id="leaveForm" class="leave-form" action="{{ url_for('leave.leave') }}">
-            <div class="form-row">
-              <div class="form-group col-md-4">
+            <div class="row g-3">
+              <div class="col-md-4">
                 <label for="leave_type">Leave Type</label>
                 <select name="leave_type" id="leave_type" class="form-control" required>
                   <option value="" disabled selected>Choose...</option>
@@ -251,22 +257,31 @@
                   {% endfor %}
                 </select>
               </div>
-              <div class="form-group col-md-4">
+              <div class="col-md-4">
                 <label for="start_date">Start Date</label>
                 <input type="date" name="start_date" id="start_date" class="form-control" required>
               </div>
-              <div class="form-group col-md-4">
+              <div class="col-md-4">
                 <label for="end_date">End Date</label>
                 <input type="date" name="end_date" id="end_date" class="form-control" required>
               </div>
             </div>
-            <div class="form-row align-items-end">
-              <div class="form-group col-md-8">
+            <div class="row g-3 align-items-end mt-2">
+              <div class="col-md-8">
                 <label for="reason">Reason</label>
-                <input type="text" name="reason" id="reason" class="form-control" placeholder="Optional">
+                <select name="reason" id="reason" class="form-control" required>
+                  <option value="" disabled selected>Select a reason...</option>
+                  <option value="Medical">Medical</option>
+                  <option value="Vacation">Vacation</option>
+                  <option value="Personal">Personal</option>
+                  <option value="Family Emergency">Family Emergency</option>
+                  <option value="Maternity/Paternity">Maternity/Paternity</option>
+                  <option value="Bereavement">Bereavement</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
-              <div class="form-group col-md-4 text-right">
-                <button type="button" class="btn btn-success btn-block mt-4" data-toggle="modal" data-target="#confirmModal">
+              <div class="col-md-4 text-end">
+                <button type="button" class="btn btn-success w-100 mt-4" data-bs-toggle="modal" data-bs-target="#confirmModal">
                   <i class="fa fa-paper-plane"></i> Request Leave
                 </button>
               </div>
@@ -279,20 +294,38 @@
 
   <!-- Leave Requests Table -->
   <div class="card leave-card">
-    <div class="leave-card-header" style="background: var(--color-primary, #007bff);">
+    <div class="leave-card-header" style="background: #f7f7f9;">
       <i class="fa fa-history"></i> Leave History
     </div>
     <!-- Filter for Leave History -->
     <div class="card-body pb-0">
       <div class="row mb-2">
         <div class="col-md-4 col-12 mb-2 mb-md-0">
-          <input type="text" id="historyFilter" class="form-control" placeholder="Filter by type, status, or date...">
+          <select id="typeFilter" class="form-control">
+            <option value="">Filter by type...</option>
+            {% for t in requestable_types %}
+              <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3 col-12 mb-2 mb-md-0">
+          <select id="statusFilter" class="form-control">
+            <option value="">Filter by status...</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Pending">Pending</option>
+          </select>
         </div>
         <div class="col-md-3 col-12">
           <select id="monthFilter" class="form-control">
             <option value="">Filter by month...</option>
             {% for leave in leaves %}
-              {% set month = leave.start_date.strftime('%Y-%m') %}
+              {% if leave.start_date %}
+                {% set month = leave.start_date.strftime('%Y-%m') %}
+              {% else %}
+                {% set month = '' %}
+              {% endif %}
               {% if month not in months %}
                 {% set _ = months.append(month) %}
               {% endif %}
@@ -308,23 +341,23 @@
     <div class="card-body p-0">
       {% if leaves %}
       <div class="table-responsive">
-        <table class="table table-striped table-hover leave-history-table mb-0">
+        <table class="table table-striped table-hover leave-history-table mb-0 text-center align-middle">
           <thead class="thead-light">
             <tr>
-              <th>Type</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Status</th>
-              <th>Reason</th>
-              <th>Requested</th>
-              <th>Reviewed By</th>
-              <th>Reviewed At</th>
-              <th>Action</th>
+              <th class="text-center">Type</th>
+              <th class="text-center">Start</th>
+              <th class="text-center">End</th>
+              <th class="text-center">Status</th>
+              <th class="text-center">Reason</th>
+              <th class="text-center">Requested</th>
+              <th class="text-center">Reviewed By</th>
+              <th class="text-center">Reviewed At</th>
+              <th class="text-center">Action</th>
             </tr>
           </thead>
           <tbody id="leave-history-tbody">
             {% for leave in leaves %}
-              <tr class="history-row{% if loop.index > 10 %} extra-leave-row{% endif %}{% if loop.index > 5 %} mobile-extra-leave-row{% endif %}" {% if loop.index > 10 %}style="display:none;"{% elif loop.index > 5 %}style="display:none;"{% endif %}>
+              <tr class="history-row{% if loop.index > 5 %} extra-leave-row{% endif %}" {% if loop.index > 5 %}style="display:none;"{% endif %}>
                 <td>{{ leave.leave_type }}</td>
                 <td>{{ leave.start_date }}</td>
                 <td>{{ leave.end_date }}</td>
@@ -348,12 +381,27 @@
                     <button type="button"
                             class="btn btn-sm btn-warning cancel-leave-btn"
                             data-leave-id="{{ leave.id }}"
-                            data-toggle="modal"
-                            data-target="#cancelModal">
+                            data-bs-toggle="modal"
+                            data-bs-target="#cancelModal">
                       Cancel
                     </button>
                   {% else %}
-                    —
+                    <button type="button"
+                            class="btn btn-sm btn-info show-leave-info"
+                            data-leave-id="{{ leave.id }}"
+                            data-leave-type="{{ leave.leave_type }}"
+                            data-start="{{ leave.start_date }}"
+                            data-end="{{ leave.end_date }}"
+                            data-status="{{ leave.status }}"
+                            data-reason="{{ leave.reason or '-' }}"
+                            data-requested="{{ leave.requested_at or '-' }}"
+                            data-requested-by="{{ leave.requested_by or '-' }}"
+                            data-reviewed-by="{{ leave.reviewed_by or '-' }}"
+                            data-reviewed-at="{{ leave.reviewed_at or '-' }}"
+                            data-cancelled-by="{{ leave.cancelled_by or '-' }}"
+                            data-current-user="{{ current_user.username }}">
+                      <i class="fa fa-info-circle"></i> Info
+                    </button>
                   {% endif %}
                 </td>
               </tr>
@@ -366,6 +414,7 @@
       </div>
       <div class="text-center my-3">
         <button id="loadMoreBtn" class="btn btn-outline-primary px-4" style="border-radius:2rem;">Load More</button>
+        <button id="loadLessBtn" class="btn btn-outline-secondary px-4" style="border-radius:2rem; display:none;">Load Less</button>
       </div>
       {% else %}
         <div class="p-3 text-muted">No leave requests.</div>
@@ -374,355 +423,359 @@
   </div>
 </div>
 
-<!-- Confirmation Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
+<!-- Confirm Leave Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
+      <div class="modal-header">
         <h5 class="modal-title" id="confirmModalLabel">Confirm Leave Request</h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        Are you sure you want to submit this leave request?
+        Are you sure you want to request this leave?
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-success" id="confirmSubmitBtn">Yes, Submit</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="confirmSubmitBtn" type="button" class="btn btn-primary">Confirm</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Cancel Confirmation Modal -->
-<div class="modal fade" id="cancelModal" tabindex="-1" role="dialog" aria-labelledby="cancelModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
+<!-- Leave Policy Info Modal -->
+<div class="modal fade" id="leaveInfoModal" tabindex="-1" aria-labelledby="leaveInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <form method="post" id="cancelLeaveForm">
-        <div class="modal-header bg-warning text-dark">
+      <div class="modal-header">
+        <h5 class="modal-title" id="leaveInfoModalLabel">Leave Policy</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul>
+          <li><b>Annual Leave:</b> Must be requested at least <b>5 days in advance</b>. Maximum of 20 days per year.</li>
+          <li><b>Sick Leave:</b> Requires a medical certificate for absences longer than 2 days. Notify your manager as soon as possible.</li>
+          <li><b>Personal Leave:</b> For urgent personal matters. Subject to manager approval.</li>
+          <li><b>Family Emergency:</b> For immediate family emergencies. Please provide supporting documents if available.</li>
+          <li><b>Maternity/Paternity Leave:</b> As per company and government policy. Contact HR for documentation requirements.</li>
+          <li><b>Bereavement Leave:</b> Up to 5 days for immediate family. Additional days may be granted at management discretion.</li>
+          <li><b>Other Leave:</b> Specify the reason in your request. Subject to approval.</li>
+        </ul>
+        <hr>
+        <ul>
+          <li>All leave requests are subject to manager and HR approval.</li>
+          <li>Unplanned absences should be communicated as soon as possible.</li>
+          <li>Check your leave balance before submitting a request.</li>
+          <li>For further details, refer to the <a href="/static/leave_policy.pdf" target="_blank">full leave policy document</a> or contact HR.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-policy" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="feedbackModalLabel">Notice</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="feedbackModalBody">
+        <!-- Feedback message will be inserted here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel Leave Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="cancelLeaveForm" method="post" action="">
+        <div class="modal-header">
           <h5 class="modal-title" id="cancelModalLabel">Cancel Leave Request</h5>
-          <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           Are you sure you want to cancel this leave request?
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
-          <button type="submit" class="btn btn-warning" id="confirmCancelBtn">Yes, Cancel</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+          <button type="submit" class="btn btn-danger">Yes, Cancel</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- Flash Modal (modern, centered) -->
-{% set flash_messages = get_flashed_messages(with_categories=true) %}
-<style>
-  #flashModal .modal-content {
-    border-radius: 1rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    border: none;
-    background: #fff;
-    animation: popIn .25s cubic-bezier(.4,2,.6,1) both;
-  }
-  @keyframes popIn {
-    0% { transform: scale(.95); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  #flashModal .modal-header {
-    border-top-left-radius: 1rem;
-    border-top-right-radius: 1rem;
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-  #flashModal .modal-footer {
-    border-bottom-left-radius: 1rem;
-    border-bottom-right-radius: 1rem;
-    border-top: none;
-    padding-top: 0;
-  }
-  #flashModal .modal-title {
-    font-weight: 600;
-    letter-spacing: .5px;
-  }
-  #flashModal .close {
-    font-size: 1.5rem;
-    outline: none;
-  }
-</style>
-<div class="modal fade" id="flashModal" tabindex="-1" role="dialog" aria-labelledby="flashModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      {% if flash_messages %}
-        {% set first_category = flash_messages[0][0] %}
-        <div class="modal-header 
-          {% if first_category == 'success' %}bg-success text-white
-          {% elif first_category == 'danger' %}bg-danger text-white
-          {% else %}bg-info text-white{% endif %}">
-          <h5 class="modal-title" id="flashModalLabel">
-            {% if first_category == 'success' %}Success
-            {% elif first_category == 'danger' %}Error
-            {% else %}Notice{% endif %}
-          </h5>
-          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        {% if first_category == 'success' %}
-          <div class="modal-body">
-            <div class="alert alert-success" style="background:#e8f5e9; color:#388e3c; border:none; font-size:1.1rem;">
-              <i class="fa fa-check-circle"></i>
-              <strong>Submission Successful!</strong> Your leave request has been submitted.
-              <br>
-              <span style="color:#222;">
-                <b>What happens next?</b>
-                <ul style="margin-bottom:0.2rem;">
-                  <li>Your request will be reviewed by your manager or HR.</li>
-                  <li>You will receive a notification once your request is approved or rejected.</li>
-                  <li>You can track the status in the Leave History table below.</li>
-                  <li>If urgent, contact HR directly at <a href="mailto:hr@company.com">hr@company.com</a>.</li>
-                </ul>
-              </span>
-            </div>
-          </div>
-        {% else %}
-          <div class="modal-body">
-            <ul class="mb-0 pl-3" style="font-size:1.1rem;">
-              {% for category, message in flash_messages %}
-                <li class="mb-2">{{ message }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-        {% endif %}
-        <div class="modal-footer justify-content-center">
-          <button type="button" class="btn btn-outline-secondary px-4" data-dismiss="modal">Close</button>
-        </div>
-      {% endif %}
-    </div>
-  </div>
-</div>
-
-<!-- Modern Leave Info & Policy Modal -->
-<div class="modal fade" id="leaveInfoModal" tabindex="-1" role="dialog" aria-labelledby="leaveInfoModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+<!-- Leave Details Modal -->
+<div class="modal fade" id="leaveDetailsModal" tabindex="-1" aria-labelledby="leaveDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="leaveInfoModalLabel">
-          <i class="fa fa-info-circle mr-2"></i>Leave Info & Full Policy
-        </h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <h5 class="modal-title" id="leaveDetailsModalLabel">Leave Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body" style="max-height:60vh; overflow-y:auto;">
-        <h5>How Leave Requests Work</h5>
-        <ul>
-          <li>Check your leave balance before submitting a request.</li>
-          <li>Requests must be made at least <b>5 days in advance</b>.</li>
-          <li>All leave is subject to approval by your manager or HR.</li>
-          <li>You can track the status of your requests in the Leave History table.</li>
-          <li>For urgent or special cases, contact HR directly.</li>
-        </ul>
-        <div class="alert alert-info" style="background:#e3f2fd; color:#1976d2; border:none;">
-          <i class="fa fa-lightbulb-o"></i>
-          <strong>Tip:</strong> For any questions, contact HR.
-        </div>
-        <hr>
-        <h5>Full Leave Policy</h5>
-        <h6>1. Eligibility</h6>
-        <p>All full-time employees are eligible for paid leave as per their contract. Part-time and contract employees may have different entitlements.</p>
-        <h6>2. Types of Leave</h6>
-        <ul>
-          <li><b>Annual Leave:</b> For vacation or personal time off.</li>
-          <li><b>Sick Leave:</b> For illness or medical appointments.</li>
-          <li><b>Emergency Leave:</b> For urgent, unforeseen circumstances.</li>
-        </ul>
-        <h6>3. Application Process</h6>
-        <ol>
-          <li>Submit your leave request at least 5 days in advance.</li>
-          <li>Provide a valid reason and select the correct leave type.</li>
-          <li>Wait for approval from your manager or HR.</li>
-        </ol>
-        <h6>4. Approval & Rejection</h6>
-        <p>All leave requests are subject to approval. You will be notified via email or dashboard once your request is reviewed.</p>
-        <h6>5. Special Cases</h6>
-        <p>For emergencies or exceptions, contact HR directly at <a href="mailto:hr@company.com">hr@company.com</a>.</p>
-        <h6>6. Policy Updates</h6>
-        <p>This policy may be updated. Please check this page regularly for changes.</p>
+      <div class="modal-body" id="leaveDetailsBody">
+        <!-- Details will be filled by JS -->
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
       </div>
     </div>
   </div>
 </div>
+{% endblock %}
 
-<!-- Modern More Info Modal -->
-<div class="modal fade" id="moreInfoModal" tabindex="-1" role="dialog" aria-labelledby="moreInfoModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header" style="background: #1976d2; color: #fff;">
-        <h5 class="modal-title" id="moreInfoModalLabel">
-          <i class="fa fa-info-circle mr-2"></i>How Leave Requests Work
-        </h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body" style="background: #f7fafd;">
-        <ul>
-          <li>Check your leave balance before submitting a request.</li>
-          <li>Requests must be made at least <b>5 days in advance</b>.</li>
-          <li>All leave is subject to approval by your manager or HR.</li>
-          <li>You can track the status of your requests in the Leave History table.</li>
-          <li>For urgent or special cases, contact HR directly.</li>
-        </ul>
-        <div class="alert alert-info" style="background:#e3f2fd; color:#1976d2; border:none;">
-          <i class="fa fa-lightbulb-o"></i>
-          <strong>Tip:</strong> For full details, see our leave policy.
-        </div>
-      </div>
-      <div class="modal-footer justify-content-between" style="background: #f7fafd;">
-        <a href="/static/policy.pdf" class="btn btn-policy" target="_blank">
-          <i class="fa fa-external-link"></i> View Full Leave Policy
-        </a>
-        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- jQuery and Bootstrap JS -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-{% if flash_messages %}
+{% block extra_js %}
 <script>
-  $(function() {
-    $('#flashModal').modal('show');
-  });
-</script>
-{% endif %}
-
-<script>
-  // Modal confirmation for leave request
-  document.getElementById('confirmSubmitBtn').onclick = function() {
-    document.querySelector('#confirmModal .modal-body').innerHTML = '<span class="text-success">Submitting your request...</span>';
-    document.getElementById('confirmSubmitBtn').disabled = true;
-    setTimeout(function() {
-      document.getElementById('leaveForm').submit();
-    }, 700);
-  };
-
-  // Handle cancel button click
-  document.querySelectorAll('.cancel-leave-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var leaveId = this.getAttribute('data-leave-id');
-      var form = document.getElementById('cancelLeaveForm');
-      form.action = "/cancel_leave/" + leaveId;
-    });
-  });
-
-  // Load More functionality for leave history
   document.addEventListener('DOMContentLoaded', function() {
-    var loadMoreBtn = document.getElementById('loadMoreBtn');
-    if (loadMoreBtn) {
-      loadMoreBtn.addEventListener('click', function() {
-        document.querySelectorAll('.extra-leave-row').forEach(function(row) {
-          row.style.display = '';
-        });
-        loadMoreBtn.style.display = 'none';
-      });
-    }
-  });
+    var btn = document.getElementById('confirmSubmitBtn');
+    if (btn) {
+      btn.onclick = function() {
+        var form = document.getElementById('leaveForm');
+        var startDateInput = document.getElementById('start_date');
+        var endDateInput = document.getElementById('end_date');
+        var leaveTypeInput = document.getElementById('leave_type');
+        var reasonInput = document.getElementById('reason');
+        var startDate = new Date(startDateInput.value);
+        var today = new Date();
+        today.setHours(0,0,0,0);
 
-  // Helper to get initial rows to show
-  function getInitialRowsToShow() {
-    return window.innerWidth < 768 ? 5 : 10;
-  }
+        // Calculate the minimum allowed date (today + 5 days)
+        var minDate = new Date(today);
+        minDate.setDate(minDate.getDate() + 5);
 
-  // Filter and month filter logic
-  function filterRows() {
-    var filter = document.getElementById('historyFilter').value.toLowerCase();
-    var month = document.getElementById('monthFilter').value;
-    var rows = document.querySelectorAll('#leave-history-tbody tr');
-    var visibleRows = 0;
-    rows.forEach(function(row) {
-      var text = row.textContent.toLowerCase();
-      var show = true;
-      if (filter && !text.includes(filter)) show = false;
-      if (month) {
-        var dateCell = row.children[1]; // Start date column
-        if (dateCell) {
-          var dateVal = dateCell.textContent.trim();
-          show = show && dateVal.startsWith(month);
+        if (!form.checkValidity()) {
+          showFeedbackModal(
+            "Please fill out <b>all required fields</b> before submitting your leave request.",
+            "Required Fields Missing"
+          );
+          form.reportValidity();
+          return;
         }
-      }
-      row.style.display = show ? '' : 'none';
-      if (show) visibleRows++;
+
+        if (startDate < minDate) {
+          showFeedbackModal(
+            "You must request leave at least <b>5 days before</b> your start date. Please choose a later start date.",
+            "Start Date Too Soon"
+          );
+          startDateInput.focus();
+          return;
+        }
+
+        // Prepare details for the info modal (reuse leaveDetailsModal)
+        var details = `
+          <div class="mb-2"><b>Please review your request details:</b></div>
+          <ul class="list-group list-group-flush mb-2">
+            <li class="list-group-item"><b>Type:</b> ${leaveTypeInput.options[leaveTypeInput.selectedIndex].text}</li>
+            <li class="list-group-item"><b>Start Date:</b> ${startDateInput.value}</li>
+            <li class="list-group-item"><b>End Date:</b> ${endDateInput.value}</li>
+            <li class="list-group-item"><b>Reason:</b> ${reasonInput.options[reasonInput.selectedIndex].text}</li>
+          </ul>
+          <div class="alert alert-info mt-2 mb-0" style="font-size:0.97em;">
+            Click OK to submit your request.
+          </div>
+        `;
+        document.getElementById('leaveDetailsBody').innerHTML = details;
+        var infoModal = new bootstrap.Modal(document.getElementById('leaveDetailsModal'));
+        infoModal.show();
+
+        // On OK, submit the form
+        var okBtn = document.querySelector('#leaveDetailsModal .btn-primary');
+        okBtn.onclick = function() {
+          infoModal.hide();
+          btn.disabled = true;
+          setTimeout(function() {
+            form.submit();
+          }, 400);
+        };
+      };
+    }
+
+    // Handle cancel button click (if you have cancel functionality)
+    document.querySelectorAll('.cancel-leave-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var leaveId = this.getAttribute('data-leave-id');
+        var form = document.getElementById('cancelLeaveForm');
+        if (form) {
+          form.action = "/cancel_leave/" + leaveId;
+        }
+      });
     });
-    // Hide Load More if filtering or if all visible
-    var loadMoreBtn = document.getElementById('loadMoreBtn');
-    if (filter || month) {
-      loadMoreBtn.style.display = 'none';
-    } else {
-      var toShow = getInitialRowsToShow();
-      var totalRows = rows.length;
-      if (totalRows > toShow) {
-        // Only show Load More if there are hidden rows
-        var hiddenRows = Array.from(rows).slice(toShow).some(r => r.style.display !== 'none');
-        loadMoreBtn.style.display = hiddenRows ? '' : 'none';
+
+    // Filter and month filter logic
+    function filterRows() {
+      var type = document.getElementById('typeFilter').value;
+      var status = document.getElementById('statusFilter').value;
+      var month = document.getElementById('monthFilter').value;
+      var rows = document.querySelectorAll('#leave-history-tbody tr.history-row');
+      var visibleRows = 0;
+      rows.forEach(function(row) {
+        var show = true;
+        if (type && !row.children[0].textContent.includes(type)) show = false;
+        if (status && !row.children[3].textContent.includes(status)) show = false;
+        if (month && !row.children[1].textContent.startsWith(month)) show = false;
+        row.style.display = show ? '' : 'none';
+        if (show) visibleRows++;
+      });
+
+      // After filtering, only show the first 5 visible rows
+      var shown = 0;
+      rows.forEach(function(row) {
+        if (row.style.display !== 'none') {
+          if (shown < 5) {
+            row.style.display = '';
+            shown++;
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+
+      // Hide Load More/Less if filtering
+      var loadMoreBtn = document.getElementById('loadMoreBtn');
+      var loadLessBtn = document.getElementById('loadLessBtn');
+      if (type || status || month) {
+        loadMoreBtn.style.display = 'none';
+        loadLessBtn.style.display = 'none';
+      } else {
+        updateLoadButtons();
+      }
+      // Show/hide no results row
+      var noResultsRow = document.getElementById('noResultsRow');
+      if (visibleRows === 0) {
+        noResultsRow.style.display = '';
+      } else {
+        noResultsRow.style.display = 'none';
+      }
+    }
+
+    document.getElementById('typeFilter').addEventListener('change', filterRows);
+    document.getElementById('statusFilter').addEventListener('change', filterRows);
+    document.getElementById('monthFilter').addEventListener('change', filterRows);
+
+    // Responsive "Load More" for mobile/desktop
+    function updateRowsDisplay() {
+      var rows = document.querySelectorAll('#leave-history-tbody tr.history-row');
+      var shown = 0;
+      rows.forEach(function(row) {
+        if (shown < 5) {
+          row.style.display = '';
+          shown++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      updateLoadButtons();
+    }
+
+    updateRowsDisplay();
+
+    var LOAD_BATCH = 5;
+
+    // Show/hide Load More/Less buttons based on row count
+    function updateLoadButtons() {
+      var extraRows = document.querySelectorAll('.extra-leave-row');
+      var loadMoreBtn = document.getElementById('loadMoreBtn');
+      var loadLessBtn = document.getElementById('loadLessBtn');
+      var hiddenRows = Array.from(extraRows).filter(r => r.style.display === 'none');
+      if (extraRows.length === 0) {
+        loadMoreBtn.style.display = '';
+        loadLessBtn.style.display = 'none';
+      } else if (hiddenRows.length > 0) {
+        loadMoreBtn.style.display = '';
+        loadLessBtn.style.display = 'none';
       } else {
         loadMoreBtn.style.display = 'none';
+        loadLessBtn.style.display = '';
       }
     }
 
-    // Show/hide no results row
-    var noResultsRow = document.getElementById('noResultsRow');
-    if (visibleRows === 0) {
-      noResultsRow.style.display = '';
-    } else {
-      noResultsRow.style.display = 'none';
-    }
-  }
-
-  document.getElementById('historyFilter').addEventListener('input', function() {
-    var filter = this.value.toLowerCase();
-    var rows = document.querySelectorAll('#leave-history-tbody tr:not(#noResultsRow)');
-    var anyVisible = false;
-    rows.forEach(function(row) {
-      var text = row.textContent.toLowerCase();
-      var show = text.includes(filter);
-      row.style.display = show ? '' : 'none';
-      if (show) anyVisible = true;
-    });
-    document.getElementById('noResultsRow').style.display = anyVisible ? 'none' : '';
-  });
-
-  document.getElementById('monthFilter').addEventListener('change', filterRows);
-
-  // Responsive "Load More" for mobile/desktop
-  function updateRowsDisplay() {
-    var rows = document.querySelectorAll('#leave-history-tbody tr');
-    var toShow = getInitialRowsToShow();
-    rows.forEach(function(row, idx) {
-      row.style.display = idx < toShow ? '' : 'none';
-    });
-    filterRows();
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    updateRowsDisplay();
-    document.getElementById('loadMoreBtn').addEventListener('click', function() {
-      document.querySelectorAll('#leave-history-tbody tr').forEach(function(row) {
-        row.style.display = '';
+    // Set click handlers ONCE
+    var loadMoreBtn = document.getElementById('loadMoreBtn');
+    var loadLessBtn = document.getElementById('loadLessBtn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', function() {
+        var extraRows = Array.from(document.querySelectorAll('.extra-leave-row'));
+        var hiddenRows = extraRows.filter(r => r.style.display === 'none');
+        if (hiddenRows.length === 0) {
+          showFeedbackModal(
+            "You have no more leave requests to show.",
+            "No More Requests"
+          );
+        } else {
+          hiddenRows.slice(0, LOAD_BATCH).forEach(function(row) {
+            row.style.display = '';
+          });
+          updateLoadButtons();
+        }
       });
-      this.style.display = 'none';
+    }
+    if (loadLessBtn) {
+      loadLessBtn.addEventListener('click', function() {
+        var extraRows = Array.from(document.querySelectorAll('.extra-leave-row'));
+        extraRows.forEach(function(row) {
+          row.style.display = 'none';
+        });
+        updateLoadButtons();
+      });
+    }
+
+    // Call this after filtering or on page load
+    updateLoadButtons();
+
+    // Show leave details in modal
+    document.querySelectorAll('.show-leave-info').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var currentUser = btn.getAttribute('data-current-user');
+        var requestedBy = btn.getAttribute('data-requested-by');
+        var reviewedBy = btn.getAttribute('data-reviewed-by');
+        var cancelledBy = btn.getAttribute('data-cancelled-by');
+        var status = btn.getAttribute('data-status');
+        var requestedByText = (requestedBy === currentUser) ? "You" : requestedBy;
+        var reviewedByText = (reviewedBy === currentUser) ? "You" : reviewedBy;
+        var cancelledByText = (cancelledBy === currentUser) ? "You" : cancelledBy;
+
+        var details = `
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><b>Type:</b> ${btn.getAttribute('data-leave-type')}</li>
+            <li class="list-group-item"><b>Status:</b> ${status}</li>
+            <li class="list-group-item"><b>Start Date:</b> ${btn.getAttribute('data-start')}</li>
+            <li class="list-group-item"><b>End Date:</b> ${btn.getAttribute('data-end')}</li>
+            <li class="list-group-item"><b>Reason:</b> ${btn.getAttribute('data-reason')}</li>
+            <li class="list-group-item"><b>Requested At:</b> ${btn.getAttribute('data-requested')}<br>
+              <small class="text-muted">by ${requestedByText}</small>
+            </li>
+            <li class="list-group-item"><b>Reviewed By:</b> ${reviewedByText}</li>
+            <li class="list-group-item"><b>Reviewed At:</b> ${btn.getAttribute('data-reviewed-at')}</li>
+            ${status === 'Cancelled' ? `<li class="list-group-item"><b>Cancelled By:</b> ${cancelledByText}</li>` : ''}
+          </ul>
+        `;
+        document.getElementById('leaveDetailsBody').innerHTML = details;
+        var modal = new bootstrap.Modal(document.getElementById('leaveDetailsModal'));
+        modal.show();
+      });
     });
-    window.addEventListener('resize', updateRowsDisplay);
   });
+
+  // Show feedback modal with message and optional title
+  function showFeedbackModal(message, title) {
+    document.getElementById('feedbackModalBody').innerHTML = message;
+    if (title) {
+      document.getElementById('feedbackModalLabel').textContent = title;
+    } else {
+      document.getElementById('feedbackModalLabel').textContent = 'Notice';
+    }
+    var modal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+    modal.show();
+  }
 </script>
+
 {% endblock %}

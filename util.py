@@ -96,6 +96,8 @@ def get_avatar_url(user):
 
 def get_next_employee_id():
     from flask import current_app
+    import mysql.connector
+
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -103,16 +105,18 @@ def get_next_employee_id():
         database=current_app.config['DB_NAME']
     )
     cursor = conn.cursor()
-    cursor.execute("SELECT MAX(employee_id) FROM users")
+    cursor.execute("""
+        SELECT MAX(CAST(SUBSTRING(employee_id, 4) AS UNSIGNED))
+        FROM users
+        WHERE employee_id LIKE 'EMP%';
+    """)
     max_id = cursor.fetchone()[0]
     cursor.close()
     conn.close()
-    if max_id is None:
-        return 1001
-    try:
-        return int(max_id) + 1
-    except Exception:
-        return 1001
+
+    next_id_num = (max_id or 0) + 1
+    return f"EMP{str(next_id_num).zfill(4)}"
+
 
 def check_hr_code(hrcode):
     from flask import current_app

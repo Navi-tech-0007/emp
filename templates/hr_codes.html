@@ -1,8 +1,27 @@
-{% extends "main.html" %}
-{% block navbar %}{% endblock %}
-{% block body %}
-  {% include "dashboard_nav.html" %}
-  
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+.card {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(33,118,193,0.07);
+  background: #fff;
+}
+.card .btn {
+  min-width: 90px;
+  font-size: 0.97rem;
+}
+@media (min-width: 601px) {
+  #hrCodesCards .card {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="container mt-0">
   <h3>HR Codes</h3>
   <div class="row mb-3">
@@ -59,8 +78,9 @@
     </div>
   </div>
 </div>
+{% endblock %}
 
-<!-- jQuery and Bootstrap JS (must be before your script) -->
+{% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
@@ -105,23 +125,4 @@ $(function() {
   });
 });
 </script>
-
-<style>
-.card {
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(33,118,193,0.07);
-  background: #fff;
-}
-.card .btn {
-  min-width: 90px;
-  font-size: 0.97rem;
-}
-@media (min-width: 601px) {
-  #hrCodesCards .card {
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
-</style>
 {% endblock %}

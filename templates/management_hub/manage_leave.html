@@ -1,10 +1,53 @@
-{% extends "main.html" %}
-{% block navbar %}{% endblock %}
-{% block body %}
-  {% include "dashboard_nav.html" %}
+{% extends "base.html" %}
 
- 
+{% block extra_css %}
+  <style>
+    .modern-table th, .modern-table td { vertical-align: middle; white-space: nowrap; }
+    .modern-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 2; }
+    .modern-table tr { transition: background 0.15s; }
+    .modern-table tbody tr:hover { background: #f1f7ff; }
+    .modern-table img { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .modern-table .btn-group .btn { margin-right: 2px; }
+    .modern-table .badge, .modern-table .rounded-pill { font-size: 90%; }
+    .card { border: none; }
+    .card-body { padding: 2rem; }
+    .form-label { font-weight: 500; }
+    .form-select, .form-control { border-radius: 0.5rem; }
+    .table-responsive { border-radius: 1rem; overflow: hidden; }
+    @media (max-width: 900px) {
+      .modern-table th, .modern-table td { font-size: 13px; }
+      .card-body { padding: 1rem; }
+    }
+    .status-select {
+      min-width: 110px;
+      border-radius: 2rem;
+      border: 1px solid #0d6efd;
+      color: #0d6efd;
+      background: #f8faff;
+      padding: 0.2rem 0.8rem;
+      font-size: 0.95em;
+      transition: border 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 4px rgba(13,110,253,0.04);
+      margin-right: 4px;
+    }
+    .status-select:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
+    }
+    .btn-group .btn {
+      min-width: 36px;
+      padding: 0.35rem 0.7rem;
+      border-radius: 2rem !important;
+      font-size: 1em;
+    }
+    .btn-outline-success:hover, .btn-outline-danger:hover, .btn-outline-warning:hover {
+      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+      background: #f8faff;
+    }
+  </style>
+{% endblock %}
 
+{% block content %}
   <div class="container-fluid" style="max-width: 1200px;">
     <div class="card shadow rounded-4 mt-4">
       <div class="card-body">
@@ -218,7 +261,9 @@ empInput.addEventListener('input', function() {
       </div>
     </div>
   </div>
+{% endblock %}
 
+{% block extra_js %}
   <script>
   document.querySelectorAll('.confirm-status-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -253,51 +298,4 @@ empInput.addEventListener('input', function() {
     });
   });
   </script>
-{% endblock %}
-
-{% block styles %}
-  <style>
-    .modern-table th, .modern-table td { vertical-align: middle; white-space: nowrap; }
-    .modern-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 2; }
-    .modern-table tr { transition: background 0.15s; }
-    .modern-table tbody tr:hover { background: #f1f7ff; }
-    .modern-table img { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
-    .modern-table .btn-group .btn { margin-right: 2px; }
-    .modern-table .badge, .modern-table .rounded-pill { font-size: 90%; }
-    .card { border: none; }
-    .card-body { padding: 2rem; }
-    .form-label { font-weight: 500; }
-    .form-select, .form-control { border-radius: 0.5rem; }
-    .table-responsive { border-radius: 1rem; overflow: hidden; }
-    @media (max-width: 900px) {
-      .modern-table th, .modern-table td { font-size: 13px; }
-      .card-body { padding: 1rem; }
-    }
-    .status-select {
-      min-width: 110px;
-      border-radius: 2rem;
-      border: 1px solid #0d6efd;
-      color: #0d6efd;
-      background: #f8faff;
-      padding: 0.2rem 0.8rem;
-      font-size: 0.95em;
-      transition: border 0.2s, box-shadow 0.2s;
-      box-shadow: 0 1px 4px rgba(13,110,253,0.04);
-      margin-right: 4px;
-    }
-    .status-select:focus {
-      border-color: #0d6efd;
-      box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
-    }
-    .btn-group .btn {
-      min-width: 36px;
-      padding: 0.35rem 0.7rem;
-      border-radius: 2rem !important;
-      font-size: 1em;
-    }
-    .btn-outline-success:hover, .btn-outline-danger:hover, .btn-outline-warning:hover {
-      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
-      background: #f8faff;
-    }
-  </style>
 {% endblock %}

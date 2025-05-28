@@ -159,6 +159,13 @@
           {% if error %}
           <div class="alert alert-danger mt-3">{{ error }}</div>
           {% endif %}
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
         </div>
       </div>
     </div>
@@ -270,4 +277,17 @@ window.addEventListener('resize', setFullHeight);
 window.addEventListener('orientationchange', setFullHeight);
 document.addEventListener('DOMContentLoaded', setFullHeight);
 </script>
+{% if email %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Skip email step, show password form with email pre-filled
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('login_form').style.display = 'block';
+  document.getElementById('hidden_login_email').value = "{{ email }}";
+  document.getElementById('showEmail').textContent = "{{ email }}";
+  document.getElementById('showEmail').style.display = 'block';
+  document.getElementById('password').focus();
+});
+</script>
+{% endif %}
 {% endblock %}

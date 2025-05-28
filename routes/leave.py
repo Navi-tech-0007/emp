@@ -164,8 +164,8 @@ def cancel_leave(leave_id):
     )
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE leave_request SET status='Cancelled' WHERE id=%s AND (status='Pending' OR status='Approved')",
-        (leave_id,)
+        "UPDATE leave_request SET status='Cancelled', cancelled_by=%s WHERE id=%s AND (status='Pending' OR status='Approved')",
+        (current_user.username, leave_id)
     )
     conn.commit()
     cursor.close()
