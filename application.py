@@ -16,6 +16,9 @@ application = Flask(__name__)
 application.config.from_object(config)
 application.secret_key = application.config['FLASK_SECRET']
 
+import logging
+application.logger.setLevel(logging.INFO)
+
 login_manager = LoginManager()
 login_manager.init_app(application)
 login_manager.login_view = 'auth.login'

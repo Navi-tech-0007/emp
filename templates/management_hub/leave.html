@@ -553,15 +553,16 @@
         minDate.setDate(minDate.getDate() + 5);
 
         if (!form.checkValidity()) {
+          bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
           showFeedbackModal(
             "Please fill out <b>all required fields</b> before submitting your leave request.",
             "Required Fields Missing"
           );
-          form.reportValidity();
           return;
         }
 
         if (startDate < minDate) {
+          bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
           showFeedbackModal(
             "You must request leave at least <b>5 days before</b> your start date. Please choose a later start date.",
             "Start Date Too Soon"

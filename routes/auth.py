@@ -77,5 +77,4 @@ def force_password_reset():
 def logout():
     session.pop('user', None)
     session.pop('role', None)
-    flash("You have been logged out.", "info")
     return redirect(url_for('main.home'))

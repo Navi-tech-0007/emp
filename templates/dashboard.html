@@ -2,7 +2,9 @@
 
 {% block content %}
 <style>
-  body { background: #fafdff; }
+  body {
+  background: #f4f7fb !important; /* very light gray-blue */
+}
 
   /* Hide sidebar on desktop, show only on mobile */
   .sidebar {
@@ -738,7 +740,7 @@
   100% { background-position: 100% 50%; }
 }
 .photo-thought-section .card:hover::before {
-  opacity: 1;
+  opacity: 0;
 }
 
 /* Parallax effect on photo */
@@ -854,6 +856,35 @@
   color: #fff !important;
   transition: background 0.18s, color 0.18s;
 }
+
+#mobileSidebarToggle {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  #mobileSidebarToggle {
+    display: block;
+  }
+}
+
+footer .container-fluid {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+#dashboardSearchSuggestions {
+  display: block !important;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  z-index: 9999;
+}
+#dashboardSearchSuggestions li {
+  color: #222;
+}
 </style>
 
 <!-- Sidebar: visible only on mobile -->
@@ -953,38 +984,23 @@
         <div class="col-md-6 mb-3 mb-md-0">
           <div class="card info-panel h-100 p-4 shadow-sm rounded bg-white">
             <h5 class="fw-bold mb-3 text-primary">Announcements</h5>
-            {% if filtered_announcements %}
-              <ul class="list-group list-group-flush mb-4">
-                {% for ann in filtered_announcements %}
-                  <li>{{ ann.title }}</li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <div class="text-center text-muted py-4">
-                No announcements at this time.
+            {% if announcements %}
+              <div id="announcement-carousel" class="position-relative" style="min-height: 100px;">
+                <!-- Announcement content will be injected here -->
+                <div id="announcement-content"></div>
               </div>
-            {% endif %}
-
-            <h5 class="fw-bold mb-3 text-primary mt-4">To-Do</h5>
-            {% if tasks %}
-              <ul class="list-group list-group-flush">
-                {% for task in tasks %}
-                  <li class="list-group-item py-2">
-                    <i class="fa fa-check-circle text-success me-2"></i>{{ task }}
-                  </li>
-                {% endfor %}
-              </ul>
             {% else %}
-              <div class="text-center text-muted py-2">
-                No tasks for you right now.
+              <!-- No announcements message -->
+              <div class="alert alert-info text-center mb-0">
+                No announcements for your role at this time.
               </div>
             {% endif %}
           </div>
         </div>
         <div class="col-md-6">
           <div class="glass-card info-panel h-100 p-3 shadow-sm rounded d-flex flex-column justify-content-center">
-            <blockquote class="blockquote mb-0 text-center">
-              <p id="thought-text" style="font-size:1.2rem;"></p>
+            <blockquote class="blockquote mb-0 text-center" style="min-height: 110px;">
+              <p id="thought-text" style="font-size:1.2rem; min-height: 48px; display: flex; align-items: center; justify-content: center;"></p>
               <footer class="blockquote-footer mt-2" id="thought-author"></footer>
             </blockquote>
           </div>
@@ -1156,6 +1172,26 @@
       </div>
     </div>
 
+    <!-- Search bar for resources -->
+<div class="row mb-4">
+  <div class="col-md-6 mx-auto position-relative">
+    <label for="dashboardSearch" class="visually-hidden">Search resources or tools</label>
+    <input
+      type="search"
+      id="dashboardSearch"
+      name="searchQuery"
+      class="form-control form-control-lg"
+      placeholder="Search resources or tools…"
+      autocomplete="off"
+    />
+    <ul
+      id="dashboardSearchSuggestions"
+      class="list-group position-absolute w-100 mt-1"
+      style="z-index:2000;">
+    </ul>
+  </div>
+</div>
+
     {% if show_modal %}
 <script>
   var modal = new bootstrap.Modal(document.getElementById('successModal'));
@@ -1165,18 +1201,6 @@
 
     <script>
 document.addEventListener("DOMContentLoaded", function() {
-  const photos = [
-    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1503676382389-4809596d5290?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1465101178521-c1a9136a3b41?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1465101178521-c1a9136a3b41?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80"
-  ];
   const thoughts = [
     {content: "Stay positive and keep learning!", author: "GlobalTech"},
     {content: "Teamwork makes the dream work.", author: "GlobalTech"},
@@ -1196,86 +1220,62 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     return array;
   }
-  shuffle(photos);
   shuffle(thoughts);
 
   let idx = 0;
-  function showPhotoAndThought() {
-    // Fade out
-    const photoContainer = document.getElementById('photo-container');
+  function showThought() {
     const thoughtText = document.getElementById('thought-text');
     const thoughtAuthor = document.getElementById('thought-author');
-    if (photoContainer && thoughtText && thoughtAuthor) {
-      const oldImg = photoContainer.querySelector('img');
-      if (oldImg) oldImg.classList.add('fade-out');
+    if (thoughtText && thoughtAuthor) {
       thoughtText.classList.add('fade-out');
       thoughtAuthor.classList.add('fade-out');
-
       setTimeout(() => {
-        // Photo
-        if (photoContainer) {
-          const newImg = document.createElement('img');
-          newImg.id = 'random-photo';
-          newImg.src = photos[idx % photos.length];
-          newImg.alt = "Random";
-          newImg.className = "card-img-top";
-          newImg.style.height = "220px";
-          newImg.style.objectFit = "cover";
-          newImg.onerror = function() {
-            newImg.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80";
-          };
-          photoContainer.innerHTML = '';
-          photoContainer.appendChild(newImg);
-        }
-        // Thought
         thoughtText.textContent = thoughts[idx % thoughts.length].content;
         thoughtAuthor.textContent = thoughts[idx % thoughts.length].author;
-
-        // Fade in
-        setTimeout(() => {
-          const newImg = photoContainer.querySelector('img');
-          if (newImg) newImg.classList.remove('fade-out');
-          thoughtText.classList.remove('fade-out');
-          thoughtAuthor.classList.remove('fade-out');
-        }, 50);
-
-        idx = (idx + 1) % photos.length;
-      }, 600); // Match the CSS transition duration
+        thoughtText.classList.remove('fade-out');
+        thoughtAuthor.classList.remove('fade-out');
+        idx = (idx + 1) % thoughts.length;
+      }, 600);
     }
   }
 
-  showPhotoAndThought();
-  setInterval(showPhotoAndThought, 10000);
+  showThought();
+  setInterval(showThought, 10000);
 });
     </script>
 
   </div>
 </div>
 
-<footer class="footer mt-auto py-4 border-top bg-white fs-5">
-  <div class="container-fluid px-4">
-    <div class="row align-items-center text-center text-md-start">
+<footer class="footer w-100 border-top bg-white fs-5">
+  <div class="container-fluid px-0">
+    <div class="row g-4 justify-content-center text-center text-md-start mx-0">
       <div class="col-md-4 mb-3 mb-md-0">
-        <div class="fw-bold mb-2" style="font-size:1.05rem;">FOLLOW US!</div>
-        <div>
-          <a href="#" class="text-dark me-2">GlobalTech Canada</a> -
-          <a href="#" class="text-dark me-2">LinkedIn</a> |
-          <a href="#" class="text-dark me-2">Facebook</a> |
-          <a href="#" class="text-dark me-2">Instagram</a> |
-          <a href="#" class="text-dark">Twitter</a>
+        <div class="fw-bold mb-2">FOLLOW US!</div>
+        <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
+          <a href="#" class="text-dark text-decoration-none">GlobalTech Canada</a>
+          <span class="text-muted">-</span>
+          <a href="#" class="text-dark text-decoration-none">LinkedIn</a>
+          <span class="text-muted">|</span>
+          <a href="#" class="text-dark text-decoration-none">Facebook</a>
+          <span class="text-muted">|</span>
+          <a href="#" class="text-dark text-decoration-none">Instagram</a>
+          <span class="text-muted">|</span>
+          <a href="#" class="text-dark text-decoration-none">Twitter</a>
         </div>
       </div>
-      <div class="col-md-4 mb-3 mb-md-0">
-        <span style="font-size:1.5rem; vertical-align:middle;">🍁</span>
+      <div class="col-md-4 text-center mb-3 mb-md-0">
+        <span style="font-size:1.7rem;">🍁</span>
         <span class="mx-2">&copy; 2025 GlobalTech, Inc.</span>
-        <a href="#" class="text-dark ms-2">Company - About Us</a>
+        <a href="#" class="text-dark text-decoration-none">Company - About Us</a>
       </div>
-      <div class="col-md-4 text-md-end">
+      <div class="col-md-4 text-md-end text-center">
         <span>English (CA)</span>
       </div>
     </div>
   </div>
 </footer>
+
 
 <script>
 function openMobileSidebar() {
@@ -1318,5 +1318,61 @@ window.addEventListener('resize', function() {
 });
 </script>
 
-<p class="text-danger">DEBUG: user_role = {{ user_role }}</p>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Parse announcements passed as a JSON string from Flask
+  const announcements = JSON.parse('{{ announcements | safe }}');
+  let idx = 0;
+  const contentDiv = document.getElementById('announcement-content');
+  if (!contentDiv || announcements.length === 0) return;
+
+  function showAnnouncement(i) {
+    contentDiv.style.opacity = 0;
+    setTimeout(() => {
+      const ann = announcements[i];
+      contentDiv.innerHTML = `
+        <div class="fw-bold">${ann.title}</div>
+        <div class="small text-muted mb-1">${ann.message}</div>
+        ${ann.date ? `<div class="small text-secondary">${ann.date}</div>` : ''}
+      `;
+      contentDiv.style.opacity = 1;
+    }, 400);
+  }
+
+  contentDiv.style.transition = "opacity 0.4s";
+  showAnnouncement(idx);
+  setInterval(() => {
+    idx = (idx + 1) % announcements.length;
+    showAnnouncement(idx);
+  }, 6000);
+});
+</script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const searchInput = document.getElementById("dashboardSearch");
+  if (!searchInput) {
+    console.log("dashboardSearch input not found!");
+    return;
+  }
+  searchInput.addEventListener("input", function() {
+    console.log("Input event fired");
+  });
+});
+</script>
+<script>
+console.log("Search script loaded");
+document.addEventListener("DOMContentLoaded", function() {
+  const searchInput = document.getElementById("dashboardSearch");
+  if (!searchInput) {
+    console.log("dashboardSearch input not found!");
+    return;
+  }
+  searchInput.addEventListener("input", function() {
+    console.log("Input event fired");
+  });
+});
+</script>
 {% endblock %}
