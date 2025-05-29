@@ -2,27 +2,92 @@
 
 {% block extra_css %}
 <style>
-.employee-card-list {
-  margin-top: 1rem;
+.directory-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.directory-filters .form-select, .directory-filters .form-control {
+  min-width: 180px;
+  border-radius: 2rem;
+  background: #f5f8fa;
+  border: 1px solid #d1e3f8;
+  box-shadow: none;
+  transition: border-color 0.2s;
+}
+.directory-filters .form-select:focus, .directory-filters .form-control:focus {
+  border-color: #2176c1;
+  background: #fff;
+}
+.employee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1.5rem;
 }
 .employee-card {
-  border-radius: 1rem;
-  min-height: 260px;
+  background: #fff;
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 12px rgba(33,118,193,0.07);
+  padding: 2rem 1.2rem 1.2rem 1.2rem;
   display: flex;
   flex-direction: column;
-  justify-content: stretch;
+  align-items: center;
+  transition: box-shadow 0.2s;
+  border: 1px solid #e3ebfa;
 }
-.employee-card .btn {
-  min-width: 80px;
+.employee-card:hover {
+  box-shadow: 0 4px 24px rgba(33,118,193,0.13);
+  border-color: #2176c1;
+}
+.employee-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+  border: 2px solid #e9ecef;
+  background: #f5f8fa;
+}
+.employee-card .fa-user-circle {
+  font-size: 4rem;
+  color: #b0b8c1;
+  margin-bottom: 1rem;
+}
+.employee-info {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.employee-info .name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2176c1;
+}
+.employee-info .username {
+  color: #6c757d;
+  font-size: 0.97rem;
+}
+.employee-meta {
+  font-size: 0.97rem;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+.employee-status {
+  margin-bottom: 1rem;
+}
+.employee-actions {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: center;
 }
 @media (max-width: 600px) {
-  .employee-card .btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
+  .directory-filters {
+    flex-direction: column;
+    gap: 0.5rem;
   }
-  .employee-card-list .col-12 {
-    padding-left: 2px;
-    padding-right: 2px;
+  .employee-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
@@ -31,60 +96,48 @@
 {% block content %}
 <div class="container mt-4">
   <h3 class="mb-4"><i class="fa fa-users text-primary"></i> Company Directory</h3>
-  <div class="row mb-3">
-    <div class="col-md-3 mb-2 mb-md-0">
-      <select id="roleFilter" class="form-control">
-        <option value="">All Roles</option>
-        <option value="admin">Admin</option>
-        <option value="hr">HR</option>
-        <option value="root">Root</option>
-        <option value="user">User</option>
-      </select>
-    </div>
-    <div class="col-md-3 mb-2 mb-md-0">
-      <select id="deptFilter" class="form-control">
-        <option value="">All Departments</option>
-        {% for dept in departments %}
-          <option value="{{ dept }}">{{ dept }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-6">
-      <input type="text" id="empSearch" class="form-control" placeholder="Search by name, email, or department...">
-    </div>
-  </div>
+  <form id="directoryFilters" class="directory-filters">
+    <select id="roleFilter" class="form-select" aria-label="Filter by role">
+      <option value="">All Roles</option>
+      <option value="admin">Admin</option>
+      <option value="hr">HR</option>
+      <option value="root">Root</option>
+      <option value="user">User</option>
+    </select>
+    <select id="deptFilter" class="form-select" aria-label="Filter by department">
+      <option value="">All Departments</option>
+      {% for dept in departments %}
+        <option value="{{ dept }}">{{ dept }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" id="empSearch" class="form-control" placeholder="Search by name or email...">
+  </form>
 
-  <div class="employee-card-list row">
+  <div class="employee-grid" id="employeeGrid">
     {% for emp in employees %}
-    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
-      <div class="employee-card card h-100 shadow-sm">
-        <div class="card-body d-flex flex-column">
-          <div class="d-flex align-items-center mb-2">
-            {% if emp.photo_url %}
-              <img src="{{ emp.photo_url }}" alt="Photo" class="rounded-circle me-2" width="48" height="48">
-            {% else %}
-              <span class="fa fa-user-circle fa-2x text-secondary me-2" style="font-size:2.5rem;"></span>
-            {% endif %}
-            <div>
-              <div class="fw-bold" style="font-size:1.1rem;">{{ emp.name }}</div>
-              <div class="text-muted" style="font-size:0.97rem;">{{ emp.username }}</div>
-            </div>
-          </div>
-          <div class="mb-1"><strong>Role:</strong> {{ emp.role|capitalize }}</div>
-          <div class="mb-1"><strong>Department:</strong> {{ emp.department or '-' }}</div>
-          <div class="mb-1"><strong>Status:</strong>
-            {% if emp.active %}
-              <span class="badge bg-success">Active</span>
-            {% else %}
-              <span class="badge bg-secondary">Inactive</span>
-            {% endif %}
-          </div>
-          <div class="mt-auto d-flex flex-wrap gap-2">
-            <a href="{{ url_for('main.profile', username=emp.username) }}" class="btn btn-info btn-sm flex-fill">
-              <i class="fa fa-eye"></i> View
-            </a>
-          </div>
-        </div>
+    <div class="employee-card" data-role="{{ emp.role|lower }}" data-department="{{ emp.department|lower }}" data-name="{{ emp.name|lower }}" data-email="{{ emp.email|lower }}">
+      {% if emp.photo_url %}
+        <img src="{{ emp.photo_url }}" alt="Photo" class="employee-photo">
+      {% else %}
+        <span class="fa fa-user-circle"></span>
+      {% endif %}
+      <div class="employee-info">
+        <div class="name">{{ emp.name }}</div>
+        <div class="username">{{ emp.email or emp.username }}</div>
+      </div>
+      <div class="employee-meta"><strong>Role:</strong> {{ emp.role|capitalize }}</div>
+      <div class="employee-meta"><strong>Department:</strong> {{ emp.department or '-' }}</div>
+      <div class="employee-status">
+        {% if emp.active %}
+          <span class="badge bg-success">Active</span>
+        {% else %}
+          <span class="badge bg-secondary">Inactive</span>
+        {% endif %}
+      </div>
+      <div class="employee-actions">
+        <a href="{{ url_for('main.profile', username=emp.username) }}" class="btn btn-outline-primary btn-sm" title="View Profile">
+          <i class="fa fa-eye"></i>
+        </a>
       </div>
     </div>
     {% endfor %}
@@ -94,25 +147,24 @@
 
 {% block extra_js %}
 <script>
-function filterCards() {
-  var role = document.getElementById('roleFilter').value.toLowerCase();
-  var dept = document.getElementById('deptFilter').value.toLowerCase();
-  var search = document.getElementById('empSearch').value.toLowerCase();
-  document.querySelectorAll('.employee-card-list > div').forEach(function(cardCol) {
-    var card = cardCol.querySelector('.employee-card');
-    var name = card.querySelector('.fw-bold').textContent.toLowerCase();
-    var username = card.querySelector('.text-muted').textContent.toLowerCase();
-    var roleText = card.querySelector('.mb-1:nth-of-type(1)').textContent.toLowerCase();
-    var deptText = card.querySelector('.mb-1:nth-of-type(2)').textContent.toLowerCase();
-    var show = true;
-    if (role && !roleText.includes(role)) show = false;
-    if (dept && !deptText.includes(dept)) show = false;
-    if (search && !(name.includes(search) || username.includes(search) || deptText.includes(search))) show = false;
-    cardCol.style.display = show ? '' : 'none';
+function filterDirectory() {
+  const role = document.getElementById('roleFilter').value.toLowerCase();
+  const dept = document.getElementById('deptFilter').value.toLowerCase();
+  const search = document.getElementById('empSearch').value.toLowerCase();
+  document.querySelectorAll('.employee-card').forEach(card => {
+    const cardRole = card.dataset.role || '';
+    const cardDept = card.dataset.department || '';
+    const cardName = card.dataset.name || '';
+    const cardEmail = card.dataset.email || '';
+    let show = true;
+    if (role && cardRole !== role) show = false;
+    if (dept && cardDept !== dept) show = false;
+    if (search && !(cardName.includes(search) || cardEmail.includes(search))) show = false;
+    card.style.display = show ? '' : 'none';
   });
 }
-document.getElementById('roleFilter').addEventListener('change', filterCards);
-document.getElementById('deptFilter').addEventListener('change', filterCards);
-document.getElementById('empSearch').addEventListener('keyup', filterCards);
+document.getElementById('roleFilter').addEventListener('change', filterDirectory);
+document.getElementById('deptFilter').addEventListener('change', filterDirectory);
+document.getElementById('empSearch').addEventListener('input', filterDirectory);
 </script>
 {% endblock %}
