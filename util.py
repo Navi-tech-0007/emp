@@ -152,3 +152,30 @@ class User:
         return self.is_active
     def is_anonymous(self):
         return False
+
+def get_filtered_users(department=None, role=None, search=None):
+    """Fetch users filtered by department, role, and search (name/email)."""
+    from flask import current_app
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor(dictionary=True)
+    query = "SELECT * FROM users WHERE 1=1"
+    params = []
+    if department:
+        query += " AND department=%s"
+        params.append(department)
+    if role:
+        query += " AND role=%s"
+        params.append(role)
+    if search:
+        query += " AND (LOWER(name) LIKE %s OR LOWER(email) LIKE %s)"
+        params.extend([f"%{search.lower()}%", f"%{search.lower()}%"])
+    cursor.execute(query, tuple(params))
+    users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return users

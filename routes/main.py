@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify, Response, current_app
 from flask_login import login_required, current_user
-from util import get_user_by_username, get_manager_by_department, get_avatar_url, get_next_employee_id, REQUESTABLE_LEAVE_TYPES
+from util import get_user_by_username, get_manager_by_department, get_avatar_url, get_next_employee_id, REQUESTABLE_LEAVE_TYPES, get_filtered_users
 from whoosh.index import open_dir
 from whoosh.qparser import MultifieldParser
 from whoosh.highlight import HtmlFormatter
@@ -149,18 +149,12 @@ def contact():
 @main_bp.route("/directory")
 @login_required
 def directory():
-    conn = mysql.connector.connect(
-        host=current_app.config['DB_HOST'],
-        user=current_app.config['DB_USER'],
-        password=current_app.config['DB_PASSWORD'],
-        database=current_app.config['DB_NAME']
-    )
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users")
-    users = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return render_template('view-edit.html', users=users, user=current_user)
+    # Fetch all users for initial load
+    employees = get_filtered_users()
+    # Fetch all unique departments for the filter dropdown
+    departments = [row['department'] for row in employees if row['department']]
+    departments = sorted(list(set(departments)))
+    return render_template('view-edit.html', employees=employees, departments=departments, user=current_user)
 
 @main_bp.route('/profile/<username>')
 def profile(username):
