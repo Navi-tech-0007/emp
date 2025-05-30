@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4"><i class="fa fa-bullhorn"></i> Announcement Center</h2>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Modern Post Announcement Form -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <form method="post" action="{{ url_for('announcement.center') }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="form-floating">
+              <input type="text" class="form-control" id="title" name="title" maxlength="100" required placeholder="Title">
+              <label for="title"><i class="fa fa-heading"></i> Title</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-floating">
+              <select class="form-select" id="department" name="department" required>
+                <option value="" disabled selected>Select department</option>
+                <option value="all">All Departments</option>
+                {% for dept in departments %}
+                  <option value="{{ dept }}">{{ dept }}</option>
+                {% endfor %}
+              </select>
+              <label for="department"><i class="fa fa-building"></i> Posted Department</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="form-floating">
+              <textarea class="form-control" id="message" name="message" style="height: 100px" maxlength="1000" required placeholder="Message"></textarea>
+              <label for="message"><i class="fa fa-align-left"></i> Message</label>
+            </div>
+            <div class="form-text">Max 1000 characters.</div>
+          </div>
+          <div class="col-md-6">
+            <label for="roles" class="form-label"><i class="fa fa-users"></i> Target Roles</label>
+            <select class="form-select" id="roles" name="roles" multiple required>
+              {% for role in roles %}
+                <option value="{{ role }}">{{ role|capitalize }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">Hold Ctrl/Cmd to select multiple roles.</div>
+          </div>
+          <div class="col-md-3">
+            <label for="start_date" class="form-label"><i class="fa fa-calendar-plus"></i> Start Date/Time</label>
+            <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
+          </div>
+          <div class="col-md-3">
+            <label for="end_date" class="form-label"><i class="fa fa-calendar-minus"></i> End Date/Time</label>
+            <input type="datetime-local" class="form-control" id="end_date" name="end_date" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3"><i class="fa fa-plus"></i> Post Announcement</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Announcements List -->
+  {% if announcements %}
+    <div class="list-group">
+      {% for ann in announcements %}
+        <div class="list-group-item mb-3 d-flex justify-content-between align-items-start">
+          <div>
+            <h5 class="mb-1 text-primary">{{ ann.title }}</h5>
+            <p class="mb-1">{{ ann.message }}</p>
+            <small class="text-muted">
+              {{ ann.date }} | Department: {{ ann.department or 'All' }} | Roles: {{ ann.roles or 'All' }}
+            </small>
+          </div>
+          <form method="post" action="{{ url_for('announcement.delete_announcement', announcement_id=ann.id) }}" onsubmit="return confirm('Delete this announcement?');">
+            <button type="submit" class="btn btn-danger btn-sm ms-3"><i class="fa fa-trash"></i></button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">No announcements yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

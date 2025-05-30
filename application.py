@@ -10,6 +10,7 @@ from routes.admin import admin_bp
 from routes.schedule import schedule_bp
 from routes.leave import leave_bp
 from routes.api import api_bp
+from routes.announcements import announcements_bp
 from util import get_user_by_username, User
 
 application = Flask(__name__)
@@ -38,5 +39,6 @@ application.register_blueprint(admin_bp)
 application.register_blueprint(schedule_bp)
 application.register_blueprint(leave_bp)
 application.register_blueprint(api_bp)
+application.register_blueprint(announcements_bp)
 
 # ...any other setup or helper functions...

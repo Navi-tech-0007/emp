@@ -885,6 +885,83 @@ footer .container-fluid {
 #dashboardSearchSuggestions li {
   color: #222;
 }
+.modern-carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none !important;
+  color: #2176c1 !important;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  transition: color 0.18s;
+  z-index: 2;
+  padding: 0;
+  outline: none;
+  font-size: 1.7rem;
+  overflow: visible;
+}
+.modern-carousel-btn::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 0; height: 0;
+  background: radial-gradient(circle, #2176c1 40%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.5);
+  transition: opacity 0.25s, transform 0.25s, width 0.25s, height 0.25s;
+  z-index: -1;
+}
+.modern-carousel-btn:hover::after, .modern-carousel-btn:focus::after {
+  opacity: 0.25;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%) scale(1);
+}
+.modern-carousel-btn:hover, .modern-carousel-btn:focus {
+  color: #fff !important;
+}
+.modern-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  color: inherit;
+  transition: color 0.18s;
+}
+@media (max-width: 600px) {
+  .modern-carousel-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+  }
+  .modern-arrow {
+    font-size: 1.2rem;
+  }
+}
+.modern-announcement-card {
+  padding-bottom: 1rem; /* Add extra space at the bottom */
+}
+.modern-announcement-card h5 {
+  margin-top: 0.7rem;      /* Space above the title text */
+  margin-bottom: 1.1rem;   /* Space below the title */
+}
+.modern-announcement-card .small.text-secondary {
+  margin-top: 1rem;      /* Space above the date */
+  margin-bottom: 0.7rem;  /* Space below the date */
+  display: block;
+}
 </style>
 
 <!-- Sidebar: visible only on mobile -->
@@ -975,38 +1052,63 @@ footer .container-fluid {
 
   <div class="container-fluid pt-0">
 
-    <!-- Photo & Thought Cards -->
-    <div class="dashboard-section photo-thought-section mb-5">
-      <div class="row justify-content-center mb-4">
-        <div class="col-12 mb-3">
-          <h4 class="fw-bold text-center text-primary" style="letter-spacing:1px;">Updates & Announcements</h4>
-        </div>
-        <div class="col-md-6 mb-3 mb-md-0">
-          <div class="card info-panel h-100 p-4 shadow-sm rounded bg-white">
-            <h5 class="fw-bold mb-3 text-primary">Announcements</h5>
-            {% if announcements %}
-              <div id="announcement-carousel" class="position-relative" style="min-height: 100px;">
-                <!-- Announcement content will be injected here -->
-                <div id="announcement-content"></div>
+  <!-- Photo & Thought Cards Section -->
+  <div class="dashboard-section photo-thought-section mb-5">
+    <div class="row justify-content-center mb-4">
+      <div class="col-12 mb-3">
+        <h4 class="fw-bold text-center text-primary" style="letter-spacing:1px;">Updates & Announcements</h4>
+      </div>
+      <div class="col-md-6 mb-3 mb-md-0">
+        <div class="card info-panel h-100 p-4 shadow-sm rounded bg-white position-relative">
+          <h5 class="fw-bold mb-3 text-primary">Announcements</h5>
+          {% if announcements and announcements|length > 0 %}
+            <div id="announcementCarousel" class="carousel slide modern-announcement" data-bs-ride="carousel" style="position:relative;">
+              <div class="carousel-inner px-5"> <!-- Add horizontal padding for button space -->
+                {% for ann in announcements %}
+                  {% if ann.title|trim or ann.message|trim %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                      <div class="modern-announcement-card">
+                        <h5 class="fw-bold text-primary text-center mb-2">{{ ann.title }}</h5>
+                        <p class="small text-muted text-center mb-2">{{ ann.message }}</p>
+                        {% if ann.date %}
+                          <div class="small text-secondary">{{ ann.date }}</div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
               </div>
-            {% else %}
-              <!-- No announcements message -->
-              <div class="alert alert-info text-center mb-0">
-                No announcements for your role at this time.
-              </div>
-            {% endif %}
-          </div>
+              <!-- Carousel controls inside card, not at the very edge -->
+              <button class="carousel-control-prev modern-carousel-btn" type="button"
+                data-bs-target="#announcementCarousel" data-bs-slide="prev"
+                style="left: 0.5rem;">
+                <span class="visually-hidden">Previous</span>
+                <span class="modern-arrow">&#8249;</span>
+              </button>
+              <button class="carousel-control-next modern-carousel-btn" type="button"
+                data-bs-target="#announcementCarousel" data-bs-slide="next"
+                style="right: 0.5rem;">
+                <span class="visually-hidden">Next</span>
+                <span class="modern-arrow">&#8250;</span>
+              </button>
+            </div>
+          {% else %}
+            <div class="alert alert-info text-center mb-0 modern-announcement-empty">
+              No announcements for your role at this time.
+            </div>
+          {% endif %}
         </div>
-        <div class="col-md-6">
-          <div class="glass-card info-panel h-100 p-3 shadow-sm rounded d-flex flex-column justify-content-center">
-            <blockquote class="blockquote mb-0 text-center" style="min-height: 110px;">
-              <p id="thought-text" style="font-size:1.2rem; min-height: 48px; display: flex; align-items: center; justify-content: center;"></p>
-              <footer class="blockquote-footer mt-2" id="thought-author"></footer>
-            </blockquote>
-          </div>
+      </div>
+      <div class="col-md-6">
+        <div class="glass-card info-panel h-100 p-3 shadow-sm rounded d-flex flex-column justify-content-center">
+          <blockquote class="blockquote mb-0 text-center" style="min-height: 110px;">
+            <p id="thought-text" style="font-size:1.2rem; min-height: 48px; display: flex; align-items: center; justify-content: center;"></p>
+            <footer class="blockquote-footer mt-2" id="thought-author"></footer>
+          </blockquote>
         </div>
       </div>
     </div>
+  </div>
 
     <!-- Resources section -->
     <div class="dashboard-section card hide-on-mobile resources-section" style="margin-top: 0;">
@@ -1199,180 +1301,49 @@ footer .container-fluid {
 </script>
 {% endif %}
 
-    <script>
-document.addEventListener("DOMContentLoaded", function() {
+<!-- Add before </body> or at the end of your template -->
+<script>
+  document.querySelectorAll('.modern-carousel-btn').forEach(btn => {
+    btn.addEventListener('mouseup', function() {
+      this.blur();
+    });
+    btn.addEventListener('mouseleave', function() {
+      this.blur();
+    });
+  });
+
+  // Example thoughts array (replace with your dynamic data if needed)
   const thoughts = [
-    {content: "Stay positive and keep learning!", author: "GlobalTech"},
-    {content: "Teamwork makes the dream work.", author: "GlobalTech"},
-    {content: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs"},
-    {content: "Success is not the key to happiness. Happiness is the key to success.", author: "Albert Schweitzer"},
-    {content: "The only way to do great work is to love what you do.", author: "Steve Jobs"},
-    {content: "Opportunities don't happen, you create them.", author: "Chris Grosser"},
-    {content: "Believe you can and you're halfway there.", author: "Theodore Roosevelt"},
-    {content: "Quality means doing it right when no one is looking.", author: "Henry Ford"},
-    {content: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson"},
-    {content: "Great things never come from comfort zones.", author: "Anonymous"}
+    { text: "Success is not the key to happiness. Happiness is the key to success.", author: "Albert Schweitzer" },
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+    { text: "Opportunities don't happen, you create them.", author: "Chris Grosser" }
   ];
-  function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-  }
-  shuffle(thoughts);
 
-  let idx = 0;
-  function showThought() {
-    const thoughtText = document.getElementById('thought-text');
-    const thoughtAuthor = document.getElementById('thought-author');
-    if (thoughtText && thoughtAuthor) {
-      thoughtText.classList.add('fade-out');
-      thoughtAuthor.classList.add('fade-out');
-      setTimeout(() => {
-        thoughtText.textContent = thoughts[idx % thoughts.length].content;
-        thoughtAuthor.textContent = thoughts[idx % thoughts.length].author;
-        thoughtText.classList.remove('fade-out');
-        thoughtAuthor.classList.remove('fade-out');
-        idx = (idx + 1) % thoughts.length;
-      }, 600);
-    }
-  }
+  let currentThought = 0;
+  const thoughtText = document.getElementById('thought-text');
+  const thoughtAuthor = document.getElementById('thought-author');
+  const interval = 6000; // 6 seconds per thought
 
-  showThought();
-  setInterval(showThought, 10000);
-});
-    </script>
-
-  </div>
-</div>
-
-<footer class="footer w-100 border-top bg-white fs-5">
-  <div class="container-fluid px-0">
-    <div class="row g-4 justify-content-center text-center text-md-start mx-0">
-      <div class="col-md-4 mb-3 mb-md-0">
-        <div class="fw-bold mb-2">FOLLOW US!</div>
-        <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
-          <a href="#" class="text-dark text-decoration-none">GlobalTech Canada</a>
-          <span class="text-muted">-</span>
-          <a href="#" class="text-dark text-decoration-none">LinkedIn</a>
-          <span class="text-muted">|</span>
-          <a href="#" class="text-dark text-decoration-none">Facebook</a>
-          <span class="text-muted">|</span>
-          <a href="#" class="text-dark text-decoration-none">Instagram</a>
-          <span class="text-muted">|</span>
-          <a href="#" class="text-dark text-decoration-none">Twitter</a>
-        </div>
-      </div>
-      <div class="col-md-4 text-center mb-3 mb-md-0">
-        <span style="font-size:1.7rem;">🍁</span>
-        <span class="mx-2">&copy; 2025 GlobalTech, Inc.</span>
-        <a href="#" class="text-dark text-decoration-none">Company - About Us</a>
-      </div>
-      <div class="col-md-4 text-md-end text-center">
-        <span>English (CA)</span>
-      </div>
-    </div>
-  </div>
-</footer>
-
-
-<script>
-function openMobileSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-  sidebar.classList.add('mobile-open');
-  overlay.style.display = 'block';
-  setTimeout(() => overlay.style.opacity = '1', 10);
-  document.body.style.overflow = 'hidden';
-}
-function closeMobileSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-  sidebar.classList.remove('mobile-open');
-  overlay.style.opacity = '0';
-  setTimeout(() => overlay.style.display = 'none', 300);
-  document.body.style.overflow = '';
-}
-const hamburger = document.getElementById('mobileSidebarToggle');
-hamburger.onclick = function(e) {
-  e.stopPropagation();
-  const sidebar = document.getElementById('sidebar');
-  if (sidebar.classList.contains('mobile-open')) {
-    closeMobileSidebar();
-    hamburger.classList.remove('is-active');
-  } else {
-    openMobileSidebar();
-    hamburger.classList.add('is-active');
-  }
-};
-document.getElementById('sidebarOverlay').onclick = function() {
-  closeMobileSidebar();
-  hamburger.classList.remove('is-active');
-};
-window.addEventListener('resize', function() {
-  if (window.innerWidth > 900) {
-    closeMobileSidebar();
-    hamburger.classList.remove('is-active');
-  }
-});
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  // Parse announcements passed as a JSON string from Flask
-  const announcements = JSON.parse('{{ announcements | safe }}');
-  let idx = 0;
-  const contentDiv = document.getElementById('announcement-content');
-  if (!contentDiv || announcements.length === 0) return;
-
-  function showAnnouncement(i) {
-    contentDiv.style.opacity = 0;
+  function showThought(idx) {
+    // Fade out
+    thoughtText.classList.add('fade-out');
+    thoughtAuthor.classList.add('fade-out');
     setTimeout(() => {
-      const ann = announcements[i];
-      contentDiv.innerHTML = `
-        <div class="fw-bold">${ann.title}</div>
-        <div class="small text-muted mb-1">${ann.message}</div>
-        ${ann.date ? `<div class="small text-secondary">${ann.date}</div>` : ''}
-      `;
-      contentDiv.style.opacity = 1;
+      thoughtText.textContent = thoughts[idx].text;
+      thoughtAuthor.textContent = thoughts[idx].author;
+      // Fade in
+      thoughtText.classList.remove('fade-out');
+      thoughtAuthor.classList.remove('fade-out');
     }, 400);
   }
 
-  contentDiv.style.transition = "opacity 0.4s";
-  showAnnouncement(idx);
+  // Initial display
+  showThought(currentThought);
+
+  // Cycle thoughts
   setInterval(() => {
-    idx = (idx + 1) % announcements.length;
-    showAnnouncement(idx);
-  }, 6000);
-});
-</script>
-
-
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const searchInput = document.getElementById("dashboardSearch");
-  if (!searchInput) {
-    console.log("dashboardSearch input not found!");
-    return;
-  }
-  searchInput.addEventListener("input", function() {
-    console.log("Input event fired");
-  });
-});
-</script>
-<script>
-console.log("Search script loaded");
-document.addEventListener("DOMContentLoaded", function() {
-  const searchInput = document.getElementById("dashboardSearch");
-  if (!searchInput) {
-    console.log("dashboardSearch input not found!");
-    return;
-  }
-  searchInput.addEventListener("input", function() {
-    console.log("Input event fired");
-  });
-});
+    currentThought = (currentThought + 1) % thoughts.length;
+    showThought(currentThought);
+  }, interval);
 </script>
 {% endblock %}
