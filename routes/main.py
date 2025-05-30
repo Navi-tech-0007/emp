@@ -64,6 +64,7 @@ def dashboard():
             role_ok = True
         else:
             allowed_roles = [r.strip() for r in roles_str.split(',') if r.strip()]
+            user_role = current_user.role  # or however you get the user's role
             role_ok = user_role in allowed_roles
 
         # Department filter

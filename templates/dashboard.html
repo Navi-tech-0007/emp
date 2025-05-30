@@ -1319,31 +1319,11 @@ footer .container-fluid {
     { text: "Opportunities don't happen, you create them.", author: "Chris Grosser" }
   ];
 
-  let currentThought = 0;
-  const thoughtText = document.getElementById('thought-text');
-  const thoughtAuthor = document.getElementById('thought-author');
-  const interval = 6000; // 6 seconds per thought
+  // Pick a random thought
+  const randomThought = thoughts[Math.floor(Math.random() * thoughts.length)];
 
-  function showThought(idx) {
-    // Fade out
-    thoughtText.classList.add('fade-out');
-    thoughtAuthor.classList.add('fade-out');
-    setTimeout(() => {
-      thoughtText.textContent = thoughts[idx].text;
-      thoughtAuthor.textContent = thoughts[idx].author;
-      // Fade in
-      thoughtText.classList.remove('fade-out');
-      thoughtAuthor.classList.remove('fade-out');
-    }, 400);
-  }
-
-  // Initial display
-  showThought(currentThought);
-
-  // Cycle thoughts
-  setInterval(() => {
-    currentThought = (currentThought + 1) % thoughts.length;
-    showThought(currentThought);
-  }, interval);
+  // Set the text and author
+  document.getElementById('thought-text').textContent = randomThought.text;
+  document.getElementById('thought-author').textContent = randomThought.author;
 </script>
 {% endblock %}
