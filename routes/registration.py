@@ -92,11 +92,15 @@ def generate_hr_code():
             database=current_app.config['DB_NAME']
         )
         cursor = conn.cursor(dictionary=True)
+        # Fetch departments from departments table
         cursor.execute("SELECT name FROM departments ORDER BY name")
         departments = [row['name'] for row in cursor.fetchall()]
+        # Fetch unique roles from users table
+        cursor.execute("SELECT DISTINCT role FROM users WHERE role IS NOT NULL AND role != '' ORDER BY role")
+        roles = [row['role'] for row in cursor.fetchall()]
         cursor.close()
         conn.close()
-        return render_template('add-employee.html', departments=departments, user=current_user)
+        return render_template('add-employee.html', departments=departments, roles=roles, user=current_user)
     data = request.get_json()
     email = data.get('email')
     role = data.get('role', 'user')
@@ -117,14 +121,12 @@ def generate_hr_code():
         "INSERT INTO hrcodes (code, email, role, department) VALUES (%s, %s, %s, %s)",
         (code, email, role, department)
     )
-    
-    # Before inserting HR code
+    # Ensure department exists in departments table
     cursor.execute("SELECT id FROM departments WHERE name=%s", (department,))
     dept_row = cursor.fetchone()
     if not dept_row:
         cursor.execute("INSERT INTO departments (name) VALUES (%s)", (department,))
         conn.commit()
-
     conn.commit()
     cursor.close()
     conn.close()

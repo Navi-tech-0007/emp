@@ -1,30 +1,76 @@
 {% extends "base.html" %}
 
 {% block extra_css %}
-  
-<div class="container mt-5">
+<style>
+  body {
+    background: #f4f7fb !important; /* Match dashboard background */
+  }
+  .add-employee-card {
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 32px rgba(33, 118, 193, 0.10), 0 1.5px 6px rgba(33, 118, 193, 0.07);
+    background: #fff;
+    padding: 2.5rem 2rem 2rem 2rem;
+    position: relative;
+    z-index: 2;
+    animation: fadeInUp 0.7s cubic-bezier(.39,.575,.565,1) both;
+  }
+  @keyframes fadeInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .btn-company {
+    background-color: #2176c1;
+    color: #fff;
+    border: none;
+  }
+  .btn-company:hover, .btn-company:focus {
+    background-color: #155a8a;
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card shadow">
+    <div class="col-md-7 col-lg-6">
+      <div class="card add-employee-card">
         <div class="card-body">
-          <h3 class="card-title mb-4 text-center">Generate HR Code</h3>
-          <form id="hrcode_form" autocomplete="off">
-            <div class="form-group">
-              <label for="hr_email">Employee Email</label>
-              <input type="email" id="hr_email" class="form-control" required>
+          <h3 class="card-title mb-4 text-center fw-bold" style="color:#2176c1;">Generate HR Code</h3>
+          <form id="hrcode_form" autocomplete="off" novalidate>
+            <div class="mb-3">
+              <label for="hr_email" class="form-label">Employee Email</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fa fa-envelope"></i></span>
+                <input type="email" id="hr_email" class="form-control" required placeholder="employee@company.com" aria-label="Employee Email" autocomplete="email">
+              </div>
             </div>
-            <div class="form-group">
-              <label for="hr_role">Role</label>
-              <select id="hr_role" class="form-control" required>
-                <option value="user">User</option>
-                <option value="hr">HR</option>
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
+            <div class="mb-3">
+              <label for="hr_role" class="form-label">Role</label>
+              <select id="hr_role" class="form-select" required>
+                <option value="" disabled selected>Select role</option>
+                {% for role in roles %}
+                  {% if role != 'root' %}
+                    <option value="{{ role }}">{{ role|capitalize }}</option>
+                  {% endif %}
+                {% endfor %}
+                {% if session['role'] == 'hr' %}
+                  <option value="__other__">Other (Add New)</option>
+                {% endif %}
               </select>
+              {% if session['role'] == 'hr' %}
+                <input type="text" id="new_role" class="form-control mt-2" placeholder="Enter new role" style="display:none;">
+              {% endif %}
             </div>
-            <div class="form-group">
-              <label for="department">Department</label>
-              <select name="department" id="department" class="form-control" required>
+            <div class="mb-3">
+              <label for="department" class="form-label">Department</label>
+              <select name="department" id="department" class="form-select" required>
                 <option value="" disabled selected>Select department</option>
                 {% for dept in departments %}
                   <option value="{{ dept }}">{{ dept }}</option>
@@ -37,21 +83,34 @@
                 <input type="text" id="new_department" class="form-control mt-2" placeholder="Enter new department" style="display:none;">
               {% endif %}
             </div>
-            <button type="submit" class="btn btn-warning btn-block">Generate HR Code</button>
+            <button type="submit" class="btn btn-company w-100 mt-3" id="submitBtn">
+              <span id="submitText">Generate HR Code</span>
+              <span id="submitSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;"></span>
+            </button>
             <div id="hrcode_result" class="mt-3"></div>
           </form>
         </div>
       </div>
-    </div>
-  </div>
-  <div class="row justify-content-center mt-3">
-    <div class="col-md-4">
-      <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-block">Back to Dashboard</a>
+      <div class="text-center mt-4">
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary w-100">
+          <i class="fa fa-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
     </div>
   </div>
 </div>
 {% if session['role'] == 'hr' %}
 <script>
+document.getElementById('hr_role').addEventListener('change', function() {
+  var newRole = document.getElementById('new_role');
+  if (this.value === '__other__') {
+    newRole.style.display = '';
+    newRole.required = true;
+  } else {
+    newRole.style.display = 'none';
+    newRole.required = false;
+  }
+});
 document.getElementById('department').addEventListener('change', function() {
   var newDept = document.getElementById('new_department');
   if (this.value === '__other__') {
@@ -68,24 +127,87 @@ document.getElementById('department').addEventListener('change', function() {
 <script>
 document.getElementById('hrcode_form').onsubmit = function(e) {
   e.preventDefault();
-  var deptSelect = document.getElementById('department');
+
+  // Clear previous result
+  document.getElementById('hrcode_result').innerHTML = '';
+
+  // Client-side validation
+  const email = document.getElementById('hr_email');
+  const roleSelect = document.getElementById('hr_role');
+  const newRole = document.getElementById('new_role');
+  const deptSelect = document.getElementById('department');
+  const newDept = document.getElementById('new_department');
+
+  if (!email.value.trim()) {
+    email.focus();
+    document.getElementById('hrcode_result').innerHTML =
+      '<div class="alert alert-danger">Please enter an employee email.</div>';
+    return;
+  }
+  if (roleSelect.value === '') {
+    roleSelect.focus();
+    document.getElementById('hrcode_result').innerHTML =
+      '<div class="alert alert-danger">Please select a role.</div>';
+    return;
+  }
+  if (roleSelect.value === '__other__' && (!newRole.value.trim())) {
+    newRole.focus();
+    document.getElementById('hrcode_result').innerHTML =
+      '<div class="alert alert-danger">Please enter a new role.</div>';
+    return;
+  }
+  if (deptSelect.value === '') {
+    deptSelect.focus();
+    document.getElementById('hrcode_result').innerHTML =
+      '<div class="alert alert-danger">Please select a department.</div>';
+    return;
+  }
+  if (deptSelect.value === '__other__' && (!newDept.value.trim())) {
+    newDept.focus();
+    document.getElementById('hrcode_result').innerHTML =
+      '<div class="alert alert-danger">Please enter a new department.</div>';
+    return;
+  }
+
+  // Show spinner and disable button
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitSpinner').style.display = '';
+  document.getElementById('submitText').textContent = 'Generating...';
+
   var deptValue = deptSelect.value === '__other__'
-    ? (document.getElementById('new_department') ? document.getElementById('new_department').value : '')
+    ? newDept.value
     : deptSelect.value;
+
+  var roleValue = roleSelect.value === '__other__'
+    ? newRole.value
+    : roleSelect.value;
+
   fetch('/hr/generate_hr_code', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
-      email: document.getElementById('hr_email').value,
-      role: document.getElementById('hr_role').value,
+      email: email.value,
+      role: roleValue,
       department: deptValue
     })
   })
   .then(res => res.json())
   .then(data => {
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitSpinner').style.display = 'none';
+    document.getElementById('submitText').textContent = 'Generate HR Code';
+
     if (data.success) {
       document.getElementById('hrcode_result').innerHTML =
-        '<div class="alert alert-success">HR Code: <b>' + data.code + '</b></div>';
+        '<div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">' +
+          '<span class="me-2"><i class="fa fa-check-circle"></i></span>' +
+          'HR Code: <b id="hrcode_val">' + data.code + '</b>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary ms-3" onclick="navigator.clipboard.writeText(document.getElementById(\'hrcode_val\').textContent)">Copy</button>' +
+          '<button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>' +
+        '</div>';
+      document.getElementById('hrcode_form').reset();
+      if (newRole) newRole.style.display = 'none';
+      if (newDept) newDept.style.display = 'none';
     } else {
       document.getElementById('hrcode_result').innerHTML =
         '<div class="alert alert-danger">' + (data.error || 'Failed to generate HR code') + '</div>';
@@ -93,16 +215,4 @@ document.getElementById('hrcode_form').onsubmit = function(e) {
   });
 };
 </script>
-<style>
-@media (max-width: 600px) {
-  .container, .card {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-  .btn, .form-control {
-    font-size: 1rem;
-    min-height: 2.5rem;
-  }
-}
-</style>
 {% endblock %}

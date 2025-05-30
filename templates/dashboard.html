@@ -1274,25 +1274,6 @@ footer .container-fluid {
       </div>
     </div>
 
-    <!-- Search bar for resources -->
-<div class="row mb-4">
-  <div class="col-md-6 mx-auto position-relative">
-    <label for="dashboardSearch" class="visually-hidden">Search resources or tools</label>
-    <input
-      type="search"
-      id="dashboardSearch"
-      name="searchQuery"
-      class="form-control form-control-lg"
-      placeholder="Search resources or tools…"
-      autocomplete="off"
-    />
-    <ul
-      id="dashboardSearchSuggestions"
-      class="list-group position-absolute w-100 mt-1"
-      style="z-index:2000;">
-    </ul>
-  </div>
-</div>
 
     {% if show_modal %}
 <script>
@@ -1327,3 +1308,18 @@ footer .container-fluid {
   document.getElementById('thought-author').textContent = randomThought.author;
 </script>
 {% endblock %}
+
+<footer class="footer mt-auto py-3" style="background: linear-gradient(90deg, #e3ebfa 0%, #fafdff 100%); border-top: 1px solid #e0e7ef;">
+  <div class="container-fluid d-flex flex-column flex-md-row justify-content-between align-items-center py-2" style="max-width: 1200px;">
+    <div class="text-muted small mb-2 mb-md-0">
+      &copy; {{ current_year or 2025 }} <span class="fw-bold" style="color:#2176c1;">YourCompany</span>. All rights reserved.
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <a href="#" class="text-muted small text-decoration-none me-2">Privacy Policy</a>
+      <a href="#" class="text-muted small text-decoration-none me-2">Terms</a>
+      <a href="mailto:support@yourcompany.com" class="text-muted small text-decoration-none">
+        <i class="fa fa-envelope me-1"></i>Support
+      </a>
+    </div>
+  </div>
+</footer>
