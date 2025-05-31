@@ -1,61 +1,31 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-  <style>
-    .modern-table th, .modern-table td { vertical-align: middle; white-space: nowrap; }
-    .modern-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 2; }
-    .modern-table tr { transition: background 0.15s; }
-    .modern-table tbody tr:hover { background: #f1f7ff; }
-    .modern-table img { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
-    .modern-table .btn-group .btn { margin-right: 2px; }
-    .modern-table .badge, .modern-table .rounded-pill { font-size: 90%; }
-    .card { border: none; }
-    .card-body { padding: 2rem; }
-    .form-label { font-weight: 500; }
-    .form-select, .form-control { border-radius: 0.5rem; }
-    .table-responsive { border-radius: 1rem; overflow: hidden; }
-    @media (max-width: 900px) {
-      .modern-table th, .modern-table td { font-size: 13px; }
-      .card-body { padding: 1rem; }
-    }
-    .status-select {
-      min-width: 110px;
-      border-radius: 2rem;
-      border: 1px solid #0d6efd;
-      color: #0d6efd;
-      background: #f8faff;
-      padding: 0.2rem 0.8rem;
-      font-size: 0.95em;
-      transition: border 0.2s, box-shadow 0.2s;
-      box-shadow: 0 1px 4px rgba(13,110,253,0.04);
-      margin-right: 4px;
-    }
-    .status-select:focus {
-      border-color: #0d6efd;
-      box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
-    }
-    .btn-group .btn {
-      min-width: 36px;
-      padding: 0.35rem 0.7rem;
-      border-radius: 2rem !important;
-      font-size: 1em;
-    }
-    .btn-outline-success:hover, .btn-outline-danger:hover, .btn-outline-warning:hover {
-      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
-      background: #f8faff;
-    }
-  </style>
-{% endblock %}
-
 {% block content %}
-  <div class="container-fluid" style="max-width: 1200px;">
-    <div class="card shadow rounded-4 mt-4">
+<div class="toast-container position-fixed" style="top: 80px; right: 24px; z-index: 4000;"></div>
+<div class="leave-fullwidth-container px-3 px-md-5">
+    <div class="card shadow rounded-4 mt-4 border-0 leave-fullwidth-card">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h2 class="mb-0"><i class="fa fa-plane-departure text-primary"></i> Manage Leave Requests</h2>
           <span class="text-muted small">Total Requests: <b>{{ leave_requests|length }}</b></span>
         </div>
-        <p class="text-muted mb-4">Review, approve, reject, or cancel employee leave requests. Use filters to narrow results.</p>
+        Review, approve, reject, or cancel employee leave requests. Use filters to narrow results.
+        You can quickly view and review all pending requests using the <b>Pending Requests</b> button below.
+        <p><b>Tip:</b> To review requests by specific status, department, or employee, use the filters on the main page.</p>
+
+
+        <!-- Pending Requests Button -->
+<button type="button"
+        class="btn btn-primary position-relative mb-3"
+        id="pendingRequestsBtn"
+        data-bs-toggle="modal"
+        data-bs-target="#pendingRequestsModal"
+        style="font-weight: 500;">
+  <i class="fa fa-clock me-1"></i> Pending Requests
+  <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+    {{ pending_requests|length }}
+  </span>
+</button>
 
         <form method="get" class="row g-2 align-items-end mb-4" id="filterForm">
           <div class="col-md-4">
@@ -77,9 +47,14 @@
               <option value="Cancelled" {% if request.args.get('status') == 'Cancelled' %}selected{% endif %}>Cancelled</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-4">
             <label for="employee" class="form-label mb-1"><i class="fa fa-user"></i> Employee</label>
-            <input type="text" name="employee" id="employee" class="form-control form-control-sm" placeholder="Name or ID" value="{{ request.args.get('employee', '') }}">
+            <div class="input-group">
+              <input type="text" name="employee" id="employee" class="form-control form-control-sm" placeholder="Name or ID" value="{{ request.args.get('employee', '') }}">
+              <button type="submit" class="btn btn-primary btn-sm" id="searchBtn">
+                <i class="fa fa-search"></i> Search
+              </button>
+            </div>
           </div>
         </form>
 
@@ -98,14 +73,11 @@ function updateFilters() {
   window.location.replace(window.location.pathname + '?' + params.toString());
 }
 
-document.getElementById('department').addEventListener('change', updateFilters);
-document.getElementById('status').addEventListener('change', updateFilters);
-
-let empInput = document.getElementById('employee');
-let debounceTimer;
-empInput.addEventListener('input', function() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(updateFilters, 500);
+document.getElementById('department').addEventListener('change', function() {
+  document.getElementById('filterForm').submit();
+});
+document.getElementById('status').addEventListener('change', function() {
+  document.getElementById('filterForm').submit();
 });
         </script>
 
@@ -121,16 +93,16 @@ empInput.addEventListener('input', function() {
                   <th>Type</th>
                   <th>Dates</th>
                   <th>Reason</th>
-                  <th>Status</th>
+                  <th class="text-center">Status</th>
                   <th>Requested</th>
-                  <th>Reviewed By</th>
+                  <th class="d-none d-md-table-cell">Reviewed By</th>
                   <th>Reviewed At</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% for request in leave_requests %}
-                  <tr>
+                  <tr data-request-id="{{ request.id }}">
                     <td>
                       <img src="{{ request.avatar_url or url_for('static', filename='default_avatar.png') }}"
                            alt="avatar"
@@ -141,7 +113,7 @@ empInput.addEventListener('input', function() {
                     <td>
                       <span class="fw-bold">{{ request.employee_name }}</span>
                       <br>
-                      <span class="text-muted small">{{ request.employee_id or '' }}</span>
+                      <span class="text-muted small" style="font-size: 0.85em;">{{ request.employee_id or '' }}</span>
                     </td>
                     <td>
                       <span class="badge rounded-pill 
@@ -170,53 +142,43 @@ empInput.addEventListener('input', function() {
                         {{ request.reason or '-' }}
                       </span>
                     </td>
-                    <td>
+                    <td class="text-center">
                       {% if request.status == 'Approved' %}
-                        <span class="badge bg-success"><i class="fa fa-check-circle"></i> Approved</span>
+                        <span class="badge bg-success status-badge"><i class="fa fa-check-circle"></i> Approved</span>
                       {% elif request.status == 'Rejected' %}
-                        <span class="badge bg-danger"><i class="fa fa-times-circle"></i> Rejected</span>
+                        <span class="badge bg-danger status-badge"><i class="fa fa-times-circle"></i> Rejected</span>
                       {% elif request.status == 'Cancelled' %}
-                        <span class="badge bg-warning text-dark"><i class="fa fa-ban"></i> Cancelled</span>
+                        <span class="badge bg-warning text-dark status-badge"><i class="fa fa-ban"></i> Cancelled</span>
                       {% else %}
-                        <span class="badge bg-secondary"><i class="fa fa-hourglass-half"></i> Pending</span>
+                        <span class="badge bg-secondary status-badge"><i class="fa fa-hourglass-half"></i> Pending</span>
                       {% endif %}
                     </td>
                     <td>
                       <span title="{{ request.requested_at }}">{{ request.requested_at.strftime('%Y-%m-%d %H:%M') if request.requested_at else '-' }}</span>
                     </td>
-                    <td>
-                      <span title="{{ request.reviewed_by or '-' }}">{{ request.reviewed_by or '-' }}</span>
+                    <td class="d-none d-md-table-cell">
+                      {{ request.reviewed_by or '-' }}
                     </td>
                     <td>
                       <span title="{{ request.reviewed_at or '-' }}">{{ request.reviewed_at.strftime('%Y-%m-%d %H:%M') if request.reviewed_at else '-' }}</span>
                     </td>
                     <td>
-                      <div class="d-flex flex-row flex-wrap align-items-center gap-2">
-                        <form class="status-form m-0 p-0" onsubmit="return false;">
-                          <select name="status" class="form-select form-select-sm status-select" data-request-id="{{ request.id }}">
-                            <option value="">Change</option>
-                            <option value="Pending" {% if request.status == 'Pending' %}selected{% endif %}>Pending</option>
-                            <option value="Approved" {% if request.status == 'Approved' %}selected{% endif %}>Approved</option>
-                            <option value="Rejected" {% if request.status == 'Rejected' %}selected{% endif %}>Rejected</option>
-                            <option value="Cancelled" {% if request.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
-                          </select>
-                          <button type="button"
-                                  class="btn btn-outline-success shadow-sm rounded-circle ms-1 confirm-status-btn"
-                                  style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0;"
-                                  data-request-id="{{ request.id }}"
-                                  data-employee="{{ request.employee_name }}"
-                                  data-type="{{ request.leave_type }}"
-                                  data-dates="{{ request.start_date }} to {{ request.end_date }}"
-                                  data-reason="{{ request.reason }}"
-                                  data-current-status="{{ request.status }}"
-                                  title="Confirm status change">
-                            <i class="fa fa-check"></i>
-                          </button>
-                          <input type="hidden" name="department" value="{{ flask_request.args.get('department', '') }}">
-                          <input type="hidden" name="status_filter" value="{{ flask_request.args.get('status', '') }}">
-                          <input type="hidden" name="employee" value="{{ flask_request.args.get('employee', '') }}">
-                        </form>
-                      </div>
+                      <button type="button"
+                              class="btn btn-info btn-sm rounded-pill review-btn"
+                              style="font-weight: 500;"
+                              data-request-id="{{ request.id }}"
+                              data-employee="{{ request.employee_name }}"
+                              data-employeeid="{{ request.employee_id }}"
+                              data-type="{{ request.leave_type }}"
+                              data-dates="{{ request.start_date }} to {{ request.end_date }}"
+                              data-reason="{{ request.reason }}"
+                              data-current-status="{{ request.status }}"
+                              data-requested="{{ request.requested_at.strftime('%Y-%m-%d %H:%M') if request.requested_at else '-' }}"
+                              data-reviewedby="{{ request.reviewed_by or '-' }}"
+                              data-reviewedat="{{ request.reviewed_at.strftime('%Y-%m-%d %H:%M') if request.reviewed_at else '-' }}"
+                              >
+                        <i class="fa fa-eye"></i> Review
+                      </button>
                     </td>
                   </tr>
                 {% endfor %}
@@ -261,41 +223,439 @@ empInput.addEventListener('input', function() {
       </div>
     </div>
   </div>
+
+  <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="reviewStatusForm" method="post" action="{{ url_for('leave.update_leave_status', request_id=0) }}">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="reviewModalLabel">Leave Request Details</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body bg-light">
+            <div><b>Employee:</b> <span id="reviewModalEmployee"></span></div>
+            <div><b>Employee ID:</b> <span id="reviewModalEmployeeId"></span></div>
+            <div><b>Type:</b> <span id="reviewModalType"></span></div>
+            <div><b>Dates:</b> <span id="reviewModalDates"></span></div>
+            <div><b>Reason:</b> <span id="reviewModalReason"></span></div>
+            <div><b>Current Status:</b> <span id="reviewModalCurrentStatus"></span></div>
+            <div class="my-3">
+              <label for="modalNewStatus" class="form-label"><b>Change Status:</b></label>
+              <select id="modalNewStatus" name="status" class="form-select">
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div><b>Requested At:</b> <span id="modalRequested"></span></div>
+            <div><b>Reviewed By:</b> <span id="modalReviewedBy"></span></div>
+            <div><b>Reviewed At:</b> <span id="modalReviewedAt"></span></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+          <input type="hidden" name="request_id" id="modalRequestId">
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Requests Modal -->
+<div class="modal fade" id="pendingRequestsModal" tabindex="-1" aria-labelledby="pendingRequestsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4">
+      <div class="modal-header" style="background: #0d6efd;">
+        <h5 class="modal-title text-white" id="pendingRequestsModalLabel">
+          <i class="fa fa-clock me-2"></i> Pending Leave Requests ({{ pending_requests|length }})
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Info alert for the modal -->
+        <div class="alert alert-info d-flex align-items-center mb-3" style="font-size: 1em;">
+          <i class="fa fa-info-circle me-2"></i>
+          <div>
+            <b>Pending Requests</b> are leave requests that have not yet been reviewed or acted upon.<br>
+            You can review or update the status of each request directly from this list.<br>
+            <span class="d-block mt-1">
+              <b>Tip:</b> For advanced filtering, use the filters on the main page.
+            </span>
+          </div>
+        </div>
+
+        {% if pending_requests %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Employee</th>
+                <th>Type</th>
+                <th>Dates</th>
+                <th>Reason</th>
+                <th>Requested At</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in pending_requests %}
+              <tr data-request-id="{{ req.id }}">
+                <td>{{ req.employee_name }}</td>
+                <td>{{ req.leave_type }}</td>
+                <td>{{ req.start_date }} to {{ req.end_date }}</td>
+                <td>{{ req.reason or '-' }}</td>
+                <td>{{ req.requested_at.strftime('%Y-%m-%d %H:%M') if req.requested_at else '-' }}</td>
+                <td>
+                  <button type="button"
+                          class="btn btn-info btn-sm rounded-pill review-btn"
+                          style="font-weight: 500;"
+                          data-request-id="{{ req.id }}"
+                          data-employee="{{ req.employee_name }}"
+                          data-employeeid="{{ req.employee_id }}"
+                          data-type="{{ req.leave_type }}"
+                          data-dates="{{ req.start_date }} to {{ req.end_date }}"
+                          data-reason="{{ req.reason }}"
+                          data-current-status="{{ req.status }}"
+                          data-requested="{{ req.requested_at.strftime('%Y-%m-%d %H:%M') if req.requested_at else '-' }}"
+                          data-reviewedby="{{ req.reviewed_by or '-' }}"
+                          data-reviewedat="{{ req.reviewed_at.strftime('%Y-%m-%d %H:%M') if req.reviewed_at else '-' }}"
+                  >
+                    <i class="fa fa-eye"></i> Review
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <div class="alert alert-info mb-0">No pending requests.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+  <style>
+    .modern-table th, .modern-table td { vertical-align: middle; white-space: nowrap; }
+    .modern-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 2; }
+    .modern-table tr { transition: background 0.15s; }
+    .modern-table tbody tr:hover {
+      background: #e3f2fd;
+      transition: background 0.2s;
+    }
+    .modern-table img { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .modern-table .btn-group .btn { margin-right: 2px; }
+    .modern-table .badge, .modern-table .rounded-pill { font-size: 90%; }
+    .card { border: none; }
+    .card-body { padding: 2rem; }
+    .form-label { font-weight: 500; }
+    .form-select, .form-control { border-radius: 0.5rem; }
+    .table-responsive { border-radius: 1rem; overflow: hidden; overflow-x: auto; }
+    @media (max-width: 900px) {
+      .modern-table th, .modern-table td { font-size: 13px; }
+      .card-body { padding: 1rem; }
+    }
+    .status-select {
+      min-width: 110px;
+      border-radius: 2rem;
+      border: 1px solid #0d6efd;
+      color: #0d6efd;
+      background: #f8faff;
+      padding: 0.2rem 0.8rem;
+      font-size: 0.95em;
+      transition: border 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 4px rgba(13,110,253,0.04);
+      margin-right: 4px;
+    }
+    .status-select:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
+    }
+    .btn-group .btn {
+      min-width: 36px;
+      padding: 0.35rem 0.7rem;
+      border-radius: 2rem !important;
+      font-size: 1em;
+    }
+    .btn-outline-success:hover, .btn-outline-danger:hover, .btn-outline-warning:hover {
+      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+      background: #f8faff;
+    }
+    .modern-table td, .modern-table th {
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    /* Make the card and its container full width only on this page */
+    .leave-fullwidth-container {
+      width: 100vw;
+      max-width: 100vw;
+      margin-left: calc(-1 * ((100vw - 100%) / 2));
+      margin-right: calc(-1 * ((100vw - 100%) / 2));
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .leave-fullwidth-card {
+      width: 100%;
+      border-radius: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 900px) {
+      .leave-fullwidth-card { border-radius: 0.5rem; }
+    }
+    .update-status-btn {
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .update-status-btn:hover {
+      background: #e3f2fd;
+      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+    }
+
+    #alert-container {
+      position: fixed;
+      top: 70px; /* Adjust to match your navbar height */
+      right: 24px;
+      left: auto;
+      width: auto;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      pointer-events: none;
+    }
+    #alert-container .alert {
+      pointer-events: auto;
+      min-width: 320px;
+      max-width: 90vw;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      margin-bottom: 0.5rem;
+    }
+
+    .toast-progress {
+      position: absolute;
+      left: 0; bottom: 0;
+      height: 3px;
+      background: #fff;
+      opacity: 0.7;
+      width: 0;
+      transition: width linear;
+      border-radius: 0 0 0.25rem 0.25rem;
+      pointer-events: none;
+    }
+    .toast {
+      position: relative;
+      overflow: hidden;
+    }
+
+    #pendingRequestsModal .modal-header {
+      background: #0d6efd;
+      color: #fff;
+      border-top-left-radius: 1.25rem;
+      border-top-right-radius: 1.25rem;
+    }
+    #pendingRequestsModal .modal-content {
+      border-radius: 1.25rem;
+    }
+  </style>
 {% endblock %}
 
 {% block extra_js %}
-  <script>
-  document.querySelectorAll('.confirm-status-btn').forEach(function(btn) {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function normalizeStatus(status) {
+    if (!status) return '';
+    status = status.trim().toLowerCase();
+    if (status === 'pending') return 'Pending';
+    if (status === 'approved') return 'Approved';
+    if (status === 'rejected') return 'Rejected';
+    if (status === 'cancelled') return 'Cancelled';
+    return 'Pending'; // fallback
+  }
+
+  // Toast utility
+  function showToast(message, type = 'success', duration = 3000) {
+    const container = document.querySelector('.toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type} border-0 show`;
+    toast.role = 'alert';
+    toast.ariaLive = 'assertive';
+    toast.ariaAtomic = 'true';
+    toast.style.position = 'relative';
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-progress"></div>
+    `;
+    container.appendChild(toast);
+
+    // Animate the progress bar
+    const progress = toast.querySelector('.toast-progress');
+    setTimeout(() => {
+      progress.style.transition = `width ${duration}ms linear`;
+      progress.style.width = '100%';
+    }, 10);
+
+    // Auto-hide after duration
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 500);
+    }, duration);
+
+    // Remove toast if closed manually
+    toast.querySelector('.btn-close').addEventListener('click', () => {
+      toast.remove();
+    });
+  }
+
+  let openedFromPendingModal = false;
+
+  document.querySelectorAll('.review-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var row = btn.closest('.status-form');
-      var select = row.querySelector('.status-select');
-      var newStatus = select.value;
-      if (!newStatus) {
-        alert('Please select a status.');
-        return;
+      // Check if pending modal is open
+      var pendingModalEl = document.getElementById('pendingRequestsModal');
+      openedFromPendingModal = !!(pendingModalEl && pendingModalEl.classList.contains('show'));
+      if (openedFromPendingModal) {
+        var pendingModal = bootstrap.Modal.getInstance(pendingModalEl);
+        if (pendingModal) pendingModal.hide();
       }
-      // Fill modal details
-      document.getElementById('modalEmployee').textContent = btn.dataset.employee;
-      document.getElementById('modalType').textContent = btn.dataset.type;
-      document.getElementById('modalDates').textContent = btn.dataset.dates;
-      document.getElementById('modalReason').textContent = btn.dataset.reason;
-      document.getElementById('modalCurrentStatus').textContent = btn.dataset.currentStatus;
-      document.getElementById('modalNewStatus').textContent = newStatus;
 
-      // Set hidden inputs for form submission
-      document.getElementById('modalStatusInput').value = newStatus;
-      document.getElementById('modalDepartmentInput').value = row.querySelector('input[name="department"]').value;
-      document.getElementById('modalStatusFilterInput').value = row.querySelector('input[name="status_filter"]').value;
-      document.getElementById('modalEmployeeInput').value = row.querySelector('input[name="employee"]').value;
+      // Fill review modal fields as before
+      document.getElementById('reviewModalEmployee').textContent = btn.dataset.employee;
+      document.getElementById('reviewModalEmployeeId').textContent = btn.dataset.employeeid;
+      document.getElementById('reviewModalType').textContent = btn.dataset.type;
+      document.getElementById('reviewModalDates').textContent = btn.dataset.dates;
+      document.getElementById('reviewModalReason').textContent = btn.dataset.reason;
+      var status = normalizeStatus(btn.dataset.currentStatus);
+      document.getElementById('reviewModalCurrentStatus').textContent = status;
 
-      // Set form action
-      var requestId = btn.dataset.requestId;
-      document.getElementById('statusConfirmForm').action = "/update_leave_status/" + requestId;
+      // Dropdown selection fix
+      let select = document.getElementById('modalNewStatus');
+      if (select && select.options) {
+        let found = false;
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].value.trim().toLowerCase() === status.trim().toLowerCase()) {
+            select.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found) select.selectedIndex = 0;
+      }
 
-      // Show modal (Bootstrap 5)
-      var modal = new bootstrap.Modal(document.getElementById('statusConfirmModal'));
-      modal.show();
+      document.getElementById('modalRequested').textContent = btn.dataset.requested;
+      document.getElementById('modalReviewedBy').textContent = btn.dataset.reviewedby;
+      document.getElementById('modalReviewedAt').textContent = btn.dataset.reviewedat;
+      document.getElementById('modalRequestId').value = btn.dataset.requestId;
+      document.getElementById('reviewStatusForm').action = "/update_leave_status/" + btn.dataset.requestId;
+      window._lastReviewedBtn = btn;
+
+      // Show the review modal
+      var reviewModalEl = document.getElementById('reviewModal');
+      var reviewModal = new bootstrap.Modal(reviewModalEl);
+      reviewModal.show();
+
+      // When the review modal is hidden, reopen the pending modal if it was open before
+      function handler() {
+        if (openedFromPendingModal) {
+          var pendingModalEl = document.getElementById('pendingRequestsModal');
+          if (pendingModalEl) {
+            var pendingModal = new bootstrap.Modal(pendingModalEl);
+            pendingModal.show();
+          }
+        }
+        openedFromPendingModal = false;
+        reviewModalEl.removeEventListener('hidden.bs.modal', handler);
+      }
+      reviewModalEl.addEventListener('hidden.bs.modal', handler);
     });
   });
-  </script>
+
+  document.getElementById('reviewStatusForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = this;
+    const action = form.action;
+    const formData = new FormData(form);
+
+    fetch(action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json().catch(() => {
+        throw new Error('Invalid JSON');
+      });
+    })
+    .then(data => {
+      if (data.success) {
+        // Update the status badge in the main table
+        const row = document.querySelector(`tr[data-request-id="${formData.get('request_id')}"]`);
+        let badge = row.querySelector('.status-badge');
+        let iconHtml = '';
+        let badgeClass = '';
+        if (data.new_status === 'Approved') {
+          iconHtml = '<i class="fa fa-check-circle"></i> Approved';
+          badgeClass = 'badge bg-success status-badge';
+        } else if (data.new_status === 'Rejected') {
+          iconHtml = '<i class="fa fa-times-circle"></i> Rejected';
+          badgeClass = 'badge bg-danger status-badge';
+        } else if (data.new_status === 'Cancelled') {
+          iconHtml = '<i class="fa fa-ban"></i> Cancelled';
+          badgeClass = 'badge bg-warning text-dark status-badge';
+        } else {
+          iconHtml = '<i class="fa fa-hourglass-half"></i> Pending';
+          badgeClass = 'badge bg-secondary status-badge';
+        }
+        badge.className = badgeClass;
+        badge.innerHTML = iconHtml;
+
+        // Remove from pending requests modal
+        const pendingRow = document.querySelector(`#pendingRequestsModal tr[data-request-id="${formData.get('request_id')}"]`);
+        if (pendingRow) {
+          pendingRow.remove();
+        }
+
+        // Update the badge count on the Pending Requests button
+        const badgeBtn = document.querySelector('#pendingRequestsBtn .badge');
+        if (badgeBtn) {
+          let count = parseInt(badgeBtn.textContent, 10) || 0;
+          badgeBtn.textContent = Math.max(count - 1, 0);
+        }
+
+        // If no pending requests remain, show empty state in modal
+        const pendingTableBody = document.querySelector('#pendingRequestsModal tbody');
+        if (pendingTableBody && pendingTableBody.children.length === 0) {
+          pendingTableBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">
+        <i class="fa fa-inbox fa-2x mb-2"></i><br>No pending requests.
+      </td></tr>`;
+        }
+
+        if (window._lastReviewedBtn) {
+          window._lastReviewedBtn.setAttribute('data-current-status', data.new_status);
+        }
+        var modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+        modal.hide();
+
+        showToast(`Status changed to <b>${data.new_status}</b> successfully!`, 'success');
+      } else {
+        showToast(data.message || "Failed to update status.", 'danger');
+      }
+    })
+    .catch((err) => {
+      showToast("Error updating status: " + err.message, 'danger');
+    });
+  });
+});
+</script>
 {% endblock %}

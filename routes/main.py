@@ -14,9 +14,13 @@ def home():
 
 @main_bp.route('/dashboard')
 def dashboard():
+    if not current_user.is_authenticated:
+        flash("Access denied: You must be logged in to view the dashboard. If you believe this is an error, please contact IT support.", "danger")
+        return redirect(url_for('auth.login'))
+    user_role = current_user.role
     username = session.get('user')
     if not username:
-        flash("You must be logged in to view the dashboard.", "danger")
+        flash("Access denied: Your session could not be verified. Please log in again or contact IT support for assistance.", "danger")
         return redirect(url_for('auth.login'))
     user = get_user_by_username(username)
     

@@ -292,4 +292,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endif %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    document.querySelectorAll('.alert').forEach(function(alert) {
+      alert.classList.add('fade');
+      setTimeout(function() {
+        alert.classList.remove('show');
+        alert.classList.add('d-none');
+      }, 500); // Bootstrap fade transition
+    });
+  }, 3000); // 3 seconds before disappearing
+});
+</script>
 {% endblock %}

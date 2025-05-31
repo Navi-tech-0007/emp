@@ -39,7 +39,11 @@ def leave():
     )
 
 @leave_bp.route('/manage_leave')
+@login_required
 def manage_leave():
+    if current_user.role.lower() not in ['manager', 'hr']:
+        flash("Access denied: Only HR and Manager roles can access this page.", "danger")
+        return redirect(url_for('main.home'))
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -47,9 +51,39 @@ def manage_leave():
         database=current_app.config['DB_NAME']
     )
     cursor = conn.cursor(dictionary=True)
-    # Use departments table, not users
+
+    # --- Add this block ---
     cursor.execute("SELECT name FROM departments ORDER BY name")
     departments = [row['name'] for row in cursor.fetchall()]
+    # ----------------------
+
+    # Get manager's department(s)
+    manager_departments = []
+    if current_user.role.lower() == 'manager':
+        cursor.execute("SELECT department FROM users WHERE id = %s", (current_user.id,))
+        row = cursor.fetchone()
+        if row and row['department']:
+            manager_departments = [row['department']]
+    # HR or admin can see all
+    elif current_user.role.lower() in ['hr', 'admin']:
+        cursor.execute("SELECT name FROM departments")
+        manager_departments = [row['name'] for row in cursor.fetchall()]
+
+    # Filter pending requests by department
+    if manager_departments:
+        format_strings = ','.join(['%s'] * len(manager_departments))
+        cursor.execute(f"""
+            SELECT lr.*, u.name AS employee_name, u.employee_id, u.department
+            FROM leave_request lr
+            LEFT JOIN users u ON lr.employee_id = u.employee_id
+            WHERE lr.status = 'Pending' AND u.department IN ({format_strings})
+            ORDER BY lr.requested_at DESC
+        """, tuple(manager_departments))
+    else:
+        # Fallback: show none
+        pending_requests = []
+    pending_requests = cursor.fetchall()
+
     selected_department = request.args.get('department', '')
     leave_requests = []
     if selected_department:
@@ -73,6 +107,15 @@ def manage_leave():
             ORDER BY lr.requested_at DESC
         """, params)
         leave_requests = cursor.fetchall()
+    # --- Add this to fetch all pending requests for the modal ---
+    cursor.execute("""
+        SELECT lr.*, u.name AS employee_name, u.employee_id, u.department
+        FROM leave_request lr
+        LEFT JOIN users u ON lr.employee_id = u.employee_id
+        WHERE lr.status = 'Pending'
+        ORDER BY lr.requested_at DESC
+    """)
+    pending_requests = cursor.fetchall()
     cursor.close()
     conn.close()
     return render_template(
@@ -81,7 +124,8 @@ def manage_leave():
         departments=departments,
         selected_department=selected_department,
         user=current_user,
-        flask_request=request
+        flask_request=request,
+        pending_requests=pending_requests
     )
 
 @leave_bp.route('/approve_leave/<int:request_id>')
@@ -124,12 +168,76 @@ def reject_leave(request_id):
     flash('Leave request rejected.', 'info')
     return redirect(url_for('leave.manage_leave'))
 
+def approve_leave_request(request_id):
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM leave_request WHERE id=%s", (request_id,))
+    leave = cursor.fetchone()
+    if not leave:
+        cursor.close()
+        conn.close()
+        return False  # Indicate failure
+    leave_type = leave['leave_type']
+    employee_id = leave['employee_id']
+    start = leave['start_date']
+    end = leave['end_date']
+    hours_requested = ((end - start).days + 1) * 8
+    cursor.execute("""
+        UPDATE leave_balances
+        SET balance = balance - %s
+        WHERE employee_id = %s AND leave_type = %s
+    """, (hours_requested, employee_id, leave_type))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return True  # Indicate success
+
+def restore_leave_balance(request_id):
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM leave_request WHERE id=%s", (request_id,))
+    leave = cursor.fetchone()
+    if not leave:
+        cursor.close()
+        conn.close()
+        return False
+    leave_type = leave['leave_type']
+    employee_id = leave['employee_id']
+    start = leave['start_date']
+    end = leave['end_date']
+    hours_requested = ((end - start).days + 1) * 8
+    cursor.execute("""
+        UPDATE leave_balances
+        SET balance = balance + %s
+        WHERE employee_id = %s AND leave_type = %s
+    """, (hours_requested, employee_id, leave_type))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return True
+
 @leave_bp.route('/update_leave_status/<int:request_id>', methods=['POST'])
+@login_required
 def update_leave_status(request_id):
     new_status = request.form.get('status')
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     if new_status not in ['Pending', 'Approved', 'Rejected', 'Cancelled']:
+        if is_ajax:
+            return jsonify(success=False, message='Invalid status.'), 400
         flash('Invalid status.', 'danger')
         return redirect(url_for('leave.manage_leave'))
+
+    # Update status in DB
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -144,14 +252,32 @@ def update_leave_status(request_id):
     conn.commit()
     cursor.close()
     conn.close()
-    flash(f'Leave request status changed to {new_status}.', 'success')
-    department = request.form.get('department', '')
-    status = request.form.get('status_filter', '')
-    employee = request.form.get('employee', '')
-    return redirect(url_for('leave.manage_leave',
-                            department=department,
-                            status=status,
-                            employee=employee))
+
+    # Update leave balances if needed
+    if new_status == 'Approved':
+        if not approve_leave_request(request_id):
+            if is_ajax:
+                return jsonify(success=False, message='Leave request not found.'), 404
+            flash('Leave request not found.', 'danger')
+            return redirect(url_for('leave.manage_leave'))
+    elif new_status in ['Rejected', 'Cancelled']:
+        if not restore_leave_balance(request_id):
+            if is_ajax:
+                return jsonify(success=False, message='Leave request not found.'), 404
+            flash('Leave request not found.', 'danger')
+            return redirect(url_for('leave.manage_leave'))
+
+    if is_ajax:
+        return jsonify(success=True, new_status=new_status)
+    else:
+        flash(f'Leave request status changed to {new_status}.', 'success')
+        department = request.form.get('department', '')
+        status = request.form.get('status_filter', '')
+        employee = request.form.get('employee', '')
+        return redirect(url_for('leave.manage_leave',
+                                department=department,
+                                status=status,
+                                employee=employee))
 
 @leave_bp.route('/cancel_leave/<int:leave_id>', methods=['POST'])
 @login_required
@@ -225,7 +351,7 @@ def submit_leave():
     flash("Leave request submitted!", "success")
     return redirect(url_for('leave.leave'))
 
-def approve_leave_request(request_id):
+def get_pending_leave_requests():
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -233,47 +359,17 @@ def approve_leave_request(request_id):
         database=current_app.config['DB_NAME']
     )
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM leave_request WHERE id=%s", (request_id,))
-    leave = cursor.fetchone()
-    if not leave:
-        return jsonify({'success': False, 'error': 'Leave request not found.'})
-    leave_type = leave['leave_type']
-    employee_id = leave['employee_id']
-    start = leave['start_date']
-    end = leave['end_date']
-    hours_requested = ((end - start).days + 1) * 8
     cursor.execute("""
-        UPDATE leave_balances
-        SET balance = balance - %s
-        WHERE employee_id = %s AND leave_type = %s
-    """, (hours_requested, employee_id, leave_type))
-    conn.commit()
-    return jsonify({'success': True})
-
-def restore_leave_balance(request_id):
-    conn = mysql.connector.connect(
-        host=current_app.config['DB_HOST'],
-        user=current_app.config['DB_USER'],
-        password=current_app.config['DB_PASSWORD'],
-        database=current_app.config['DB_NAME']
-    )
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM leave_request WHERE id=%s", (request_id,))
-    leave = cursor.fetchone()
-    if not leave:
-        return jsonify({'success': False, 'error': 'Leave request not found.'})
-    leave_type = leave['leave_type']
-    employee_id = leave['employee_id']
-    start = leave['start_date']
-    end = leave['end_date']
-    hours_requested = ((end - start).days + 1) * 8
-    cursor.execute("""
-        UPDATE leave_balances
-        SET balance = balance + %s
-        WHERE employee_id = %s AND leave_type = %s
-    """, (hours_requested, employee_id, leave_type))
-    conn.commit()
-    return jsonify({'success': True})
+        SELECT lr.*, u.name AS employee_name, u.department
+        FROM leave_request lr
+        LEFT JOIN users u ON lr.employee_id = u.employee_id
+        WHERE lr.status = 'Pending'
+        ORDER BY lr.requested_at DESC
+    """)
+    requests = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return requests
 
 @leave_bp.route('/management_hub')
 @login_required
@@ -300,23 +396,3 @@ def pending_leave_requests():
     # Fetch only pending leave requests from your database
     pending_requests = get_pending_leave_requests()  # Replace with your actual data fetching logic
     return render_template('leave/pending_requests.html', requests=pending_requests)
-
-def get_pending_leave_requests():
-    conn = mysql.connector.connect(
-        host=current_app.config['DB_HOST'],
-        user=current_app.config['DB_USER'],
-        password=current_app.config['DB_PASSWORD'],
-        database=current_app.config['DB_NAME']
-    )
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT lr.*, u.name AS employee_name, u.department
-        FROM leave_request lr
-        LEFT JOIN users u ON lr.employee_id = u.employee_id
-        WHERE lr.status = 'Pending'
-        ORDER BY lr.requested_at DESC
-    """)
-    requests = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return requests
