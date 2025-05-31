@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, current_app, request, jsonify
 from flask_login import login_required, current_user
-from util import get_user_by_username, get_manager_by_department, get_avatar_url, REQUESTABLE_LEAVE_TYPES, get_filtered_users
+from util import get_user_by_username, get_manager_by_department, get_avatar_url, REQUESTABLE_LEAVE_TYPES, get_filtered_users, create_notification
 from whoosh.index import open_dir
 from whoosh.qparser import MultifieldParser
 from datetime import datetime
@@ -13,16 +13,14 @@ def home():
     return render_template('main.html')
 
 @main_bp.route('/dashboard')
+@login_required
 def dashboard():
-    if not current_user.is_authenticated:
-        flash("Access denied: You must be logged in to view the dashboard. If you believe this is an error, please contact IT support.", "danger")
-        return redirect(url_for('auth.login'))
+    username = current_user.username
     user_role = current_user.role
-    username = session.get('user')
-    if not username:
+    user = get_user_by_username(username)
+    if not user:
         flash("Access denied: Your session could not be verified. Please log in again or contact IT support for assistance.", "danger")
         return redirect(url_for('auth.login'))
-    user = get_user_by_username(username)
     
     # Get manager details.
     department = user.get('department') if user else None
@@ -132,7 +130,6 @@ def dashboard():
     
     return render_template(
         'dashboard.html',
-        user=current_user,
         avatar_url=get_avatar_url(user),
         manager=manager,
         balances=balances,
@@ -156,18 +153,18 @@ def directory():
     # Fetch unique departments for filter dropdown.
     departments = [row['department'] for row in employees if row.get('department')]
     departments = sorted(list(set(departments)))
-    return render_template('view-edit.html', employees=employees, departments=departments, user=current_user)
+    return render_template('view-edit.html', employees=employees, departments=departments, )
 
 @main_bp.route('/profile/<username>')
 def profile(username):
     user = get_user_by_username(username)
     if not user:
         return "User not found", 404
-    return render_template('profile.html', emp=user, avatar_url=get_avatar_url(user), user=current_user)
+    return render_template('profile.html', emp=user, avatar_url=get_avatar_url(user), )
 
 @main_bp.route('/edit_profile', methods=['POST', 'GET'])
 def edit_profile():
-    username = session.get('user')
+    user = current_user.username
     if not username:
         return redirect(url_for('auth.login'))
     user = get_user_by_username(username)
@@ -197,6 +194,8 @@ def edit_profile():
             cursor.close()
             conn.close()
             flash("Profile updated successfully!", "success")
+            # Notify user
+            create_notification(username, "Your profile was updated.", url="/profile/{}".format(username))
         except Exception as e:
             flash("Error updating profile: " + str(e), "danger")
         return redirect(url_for('main.profile', username=username))
@@ -217,8 +216,8 @@ def edit_profile():
     except Exception as e:
         departments = []
         print("Error fetching departments: ", e)
-    
-    return render_template('edit_profile.html', user=user, departments=departments)
+
+    return render_template('edit_profile.html', departments=departments)
 
 @main_bp.route('/api/search')
 def api_search():
@@ -242,3 +241,27 @@ def api_search():
                     "desc": desc
                 })
     return jsonify(results)
+
+# Add this helper function (or put in util.py)
+def get_unread_notifications(username, limit=5):
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT * FROM notifications WHERE user_username=%s AND is_read=0 ORDER BY created_at DESC LIMIT %s",
+        (username, limit)
+    )
+    notifications = cursor.fetchall()
+    cursor.execute(
+        "SELECT COUNT(*) as unread_count FROM notifications WHERE user_username=%s AND is_read=0",
+        (username,)
+    )
+    unread_count = cursor.fetchone()['unread_count']
+    cursor.close()
+    conn.close()
+    return notifications, unread_count
+

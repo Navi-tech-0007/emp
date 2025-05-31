@@ -60,11 +60,11 @@
                     <option value="{{ role }}">{{ role|capitalize }}</option>
                   {% endif %}
                 {% endfor %}
-                {% if session['role'] == 'hr' %}
+                {% if current_user.role == 'hr' %}
                   <option value="__other__">Other (Add New)</option>
                 {% endif %}
               </select>
-              {% if session['role'] == 'hr' %}
+              {% if current_user.role == 'hr' %}
                 <input type="text" id="new_role" class="form-control mt-2" placeholder="Enter new role" style="display:none;">
               {% endif %}
             </div>
@@ -75,11 +75,11 @@
                 {% for dept in departments %}
                   <option value="{{ dept }}">{{ dept }}</option>
                 {% endfor %}
-                {% if session['role'] == 'hr' %}
+                {% if current_user.role == 'hr' %}
                   <option value="__other__">Other (Add New)</option>
                 {% endif %}
               </select>
-              {% if session['role'] == 'hr' %}
+              {% if current_user.role == 'hr' %}
                 <input type="text" id="new_department" class="form-control mt-2" placeholder="Enter new department" style="display:none;">
               {% endif %}
             </div>
@@ -99,7 +99,7 @@
     </div>
   </div>
 </div>
-{% if session['role'] == 'hr' %}
+{% if current_user.role == 'hr' %}
 <script>
 document.getElementById('hr_role').addEventListener('change', function() {
   var newRole = document.getElementById('new_role');

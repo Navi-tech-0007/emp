@@ -3,13 +3,14 @@ from flask_login import login_required, current_user
 import mysql.connector
 import datetime
 from datetime import datetime, timedelta
+from util import create_notification, get_manager_by_department
 
 leave_bp = Blueprint('leave', __name__)
 
 @leave_bp.route('/leave', methods=['GET'])
 @login_required
 def leave():
-    user = session.get('user')
+    user = current_user.username
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -34,7 +35,6 @@ def leave():
         balances=balances,
         requestable_types=['Vacation', 'Sick', 'Personal'],
         leaves=leaves,
-        user=current_user,
         avatar_url=getattr(current_user, "avatar_url", None),
     )
 
@@ -60,7 +60,7 @@ def manage_leave():
     # Get manager's department(s)
     manager_departments = []
     if current_user.role.lower() == 'manager':
-        cursor.execute("SELECT department FROM users WHERE id = %s", (current_user.id,))
+        cursor.execute("SELECT department FROM users WHERE username = %s", (current_user.username,))
         row = cursor.fetchone()
         if row and row['department']:
             manager_departments = [row['department']]
@@ -123,12 +123,12 @@ def manage_leave():
         leave_requests=leave_requests,
         departments=departments,
         selected_department=selected_department,
-        user=current_user,
         flask_request=request,
         pending_requests=pending_requests
     )
 
 @leave_bp.route('/approve_leave/<int:request_id>')
+@login_required
 def approve_leave(request_id):
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
@@ -139,16 +139,31 @@ def approve_leave(request_id):
     cursor = conn.cursor()
     cursor.execute(
         "UPDATE leave_request SET status='Approved', reviewed_by=%s, reviewed_at=NOW() WHERE id=%s",
-        (session.get('user'), request_id)
+        (current_user.username, request_id)  # <-- FIXED
     )
     conn.commit()
     cursor.close()
     conn.close()
     approve_leave_request(request_id)
     flash('Leave request approved.', 'success')
+    # Notify user
+    conn2 = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor2 = conn2.cursor(dictionary=True)
+    cursor2.execute("SELECT u.username, lr.leave_type, lr.start_date, lr.end_date FROM leave_request lr LEFT JOIN users u ON lr.employee_id = u.employee_id WHERE lr.id=%s", (request_id,))
+    leave = cursor2.fetchone()
+    cursor2.close()
+    conn2.close()
+    if leave:
+        create_notification(leave['username'], f"Your leave request for {leave['leave_type']} from {leave['start_date']} to {leave['end_date']} was approved.", url="/leave")
     return redirect(url_for('leave.manage_leave'))
 
 @leave_bp.route('/reject_leave/<int:request_id>')
+@login_required
 def reject_leave(request_id):
     restore_leave_balance(request_id)
     conn = mysql.connector.connect(
@@ -160,12 +175,26 @@ def reject_leave(request_id):
     cursor = conn.cursor()
     cursor.execute(
         "UPDATE leave_request SET status='Rejected', reviewed_by=%s, reviewed_at=NOW() WHERE id=%s",
-        (session.get('user'), request_id)
+        (current_user.username, request_id)  # <-- FIXED
     )
     conn.commit()
     cursor.close()
     conn.close()
     flash('Leave request rejected.', 'info')
+    # Notify user
+    conn2 = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor2 = conn2.cursor(dictionary=True)
+    cursor2.execute("SELECT u.username, lr.leave_type, lr.start_date, lr.end_date FROM leave_request lr LEFT JOIN users u ON lr.employee_id = u.employee_id WHERE lr.id=%s", (request_id,))
+    leave = cursor2.fetchone()
+    cursor2.close()
+    conn2.close()
+    if leave:
+        create_notification(leave['username'], f"Your leave request for {leave['leave_type']} from {leave['start_date']} to {leave['end_date']} was rejected.", url="/leave")
     return redirect(url_for('leave.manage_leave'))
 
 def approve_leave_request(request_id):
@@ -247,7 +276,7 @@ def update_leave_status(request_id):
     cursor = conn.cursor()
     cursor.execute(
         "UPDATE leave_request SET status=%s, reviewed_by=%s, reviewed_at=NOW() WHERE id=%s",
-        (new_status, session.get('user'), request_id)
+        (new_status, current_user.username, request_id)  # <-- FIXED
     )
     conn.commit()
     cursor.close()
@@ -274,6 +303,23 @@ def update_leave_status(request_id):
         department = request.form.get('department', '')
         status = request.form.get('status_filter', '')
         employee = request.form.get('employee', '')
+        # Notify user
+        conn2 = mysql.connector.connect(
+            host=current_app.config['DB_HOST'],
+            user=current_app.config['DB_USER'],
+            password=current_app.config['DB_PASSWORD'],
+            database=current_app.config['DB_NAME']
+        )
+        cursor2 = conn2.cursor(dictionary=True)
+        cursor2.execute("SELECT u.username, lr.leave_type, lr.start_date, lr.end_date FROM leave_request lr LEFT JOIN users u ON lr.employee_id = u.employee_id WHERE lr.id=%s", (request_id,))
+        leave = cursor2.fetchone()
+        cursor2.close()
+        conn2.close()
+        if leave:
+            if 'approve' in request.path:
+                create_notification(leave['username'], f"Your leave request for {leave['leave_type']} from {leave['start_date']} to {leave['end_date']} was approved.", url="/leave")
+            else:
+                create_notification(leave['username'], f"Your leave request for {leave['leave_type']} from {leave['start_date']} to {leave['end_date']} was rejected.", url="/leave")
         return redirect(url_for('leave.manage_leave',
                                 department=department,
                                 status=status,
@@ -303,8 +349,21 @@ def cancel_leave(leave_id):
 @leave_bp.route('/leave', methods=['POST'])
 @login_required
 def submit_leave():
-    user = session.get('user')
-    employee_id = session.get('employee_id')
+    user = current_user.username
+    # Fetch employee_id from DB
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT employee_id FROM users WHERE username=%s", (user,))
+    row = cursor.fetchone()
+    employee_id = row['employee_id'] if row else None
+    cursor.close()
+    conn.close()
+
     leave_type = request.form.get('leave_type')
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
@@ -348,6 +407,29 @@ def submit_leave():
     conn.commit()
     cursor.close()
     conn.close()
+
+    # Notify user
+    create_notification(user, f"Your leave request for {leave_type} from {start_date} to {end_date} was submitted.", url="/leave")
+
+    # Notify manager(s)
+    conn2 = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor2 = conn2.cursor(dictionary=True)
+    cursor2.execute("SELECT department FROM users WHERE username=%s", (user,))
+    row = cursor2.fetchone()
+    if row and row['department']:
+        managers = get_manager_by_department(row['department'])
+        if managers:
+            for manager_username in managers:
+                print("Creating notification for:", manager_username)
+                create_notification(manager_username, f"{user} submitted a leave request.", url="/management_hub")
+    cursor2.close()
+    conn2.close()
+
     flash("Leave request submitted!", "success")
     return redirect(url_for('leave.leave'))
 
@@ -387,7 +469,6 @@ def management_hub():
     conn.close()
     return render_template(
         'management_hub/management_hub.html',
-        user=current_user,
         pending_leave_count=pending_leave_count
     )
 

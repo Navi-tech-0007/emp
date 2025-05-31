@@ -984,7 +984,7 @@ footer .container-fluid {
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" href="{{ url_for('main.profile', username=session['user']) }}">
+      <a class="nav-link" href="{{ url_for('main.profile', username=current_user.username) }}">
         <i class="fa fa-user"></i> <span>My Profile</span>
       </a>
     </li>
@@ -1003,7 +1003,7 @@ footer .container-fluid {
         <i class="fa fa-calendar"></i> <span>Time Off & Leave</span>
       </a>
     </li>
-    {% if session.get('role') in ['hr', 'admin', 'root', 'manager'] %}
+    {% if current_user.role in ['hr', 'admin', 'root', 'manager'] %}
       <li class="sidebar-category mt-3 mb-1 text-uppercase small fw-bold text-muted">Management</li>
       <li class="nav-item">
         <a class="nav-link" href="{{ url_for('admin.view_users') }}">
@@ -1011,7 +1011,7 @@ footer .container-fluid {
         </a>
       </li>
     {% endif %}
-    {% if session['role'] in ['hr', 'root'] %}
+    {% if current_user.role in ['hr', 'root'] %}
       <li class="nav-item">
         <a class="nav-link" href="{{ url_for('registration.generate_hr_code') }}">
           <i class="fa fa-user-plus"></i> <span>Generate HR Code</span>
@@ -1023,7 +1023,7 @@ footer .container-fluid {
         </a>
       </li>
     {% endif %}
-    {% if session.get('role') in ['hr', 'admin', 'root', 'manager'] %}
+    {% if current_user.role in ['hr', 'admin', 'root', 'manager'] %}
       <li class="nav-item">
         <a class="nav-link" href="{{ url_for('leave.management_hub') }}">
           <i class="fa fa-cogs"></i> <span>Management HUB</span>
@@ -1123,7 +1123,7 @@ footer .container-fluid {
             <div class="resource-icon bg-success text-white"><i class="fa fa-calendar-alt"></i></div>
             <div>Schedule</div>
           </a>
-          <a href="{{ url_for('main.profile', username=session['user']) }}" class="resource-item text-decoration-none">
+          <a href="{{ url_for('main.profile', username=current_user.username) }}" class="resource-item text-decoration-none">
             <div class="resource-icon bg-info text-white"><i class="fa fa-user"></i></div>
             <div>Profile</div>
           </a>
@@ -1144,6 +1144,7 @@ footer .container-fluid {
     </div>
 
     <!-- Management Tools Section -->
+    {% if current_user.role in ['hr', 'admin', 'manager', 'root'] %}
     <div class="dashboard-section hide-on-mobile" style="background: transparent; border: none;">
       <h4 class="fw-bold mb-4" style="color:#102040;">Management Tools</h4>
       <div class="management-tools-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 2rem;">
@@ -1197,6 +1198,7 @@ footer .container-fluid {
         </a>
       </div>
     </div>
+    {% endif %}
 
     <!-- Combined Info Panels (Leave Balances & Recent Requests) -->
     <div class="dashboard-section card p-4 mb-4" style="background: #fafdff; border-radius: 1.25rem; border: none;">

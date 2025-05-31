@@ -1,12 +1,17 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app, Response
 from werkzeug.security import generate_password_hash
 from flask_login import login_required, current_user
+from util import create_notification
 import mysql.connector
 
 admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.route('/admin/users')
+@login_required
 def view_users():
+    if current_user.role.lower() != 'admin':
+        flash("Access denied: Admins only.", "danger")
+        return redirect(url_for('main.home'))
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -28,8 +33,7 @@ def view_users():
         'users.html',
         users=users,
         departments=departments,
-        roles=roles,
-        user=current_user
+        roles=roles
     )
 
 @admin_bp.route('/admin/reset_password', methods=['POST'])
@@ -54,6 +58,8 @@ def reset_password():
     cursor.close()
     conn.close()
     flash('Password reset.')
+    # Notify user
+    create_notification(email, "Your password was reset by an admin.", url="/profile")
     return redirect(url_for('admin.view_users'))
 
 @admin_bp.route('/admin/deactivate_user', methods=['POST'])
@@ -71,6 +77,8 @@ def deactivate_user():
     cursor.close()
     conn.close()
     flash('User deactivated.')
+    # Notify user
+    create_notification(email, "Your account has been deactivated by an admin.", url="/profile")
     return redirect(url_for('admin.view_users'))
 
 @admin_bp.route('/admin/activate_user', methods=['POST'])
@@ -88,6 +96,8 @@ def activate_user():
     cursor.close()
     conn.close()
     flash('User activated.')
+    # Notify user
+    create_notification(email, "Your account has been activated by an admin.", url="/profile")
     return redirect(url_for('admin.view_users'))
 
 @admin_bp.route('/bulk_user_action', methods=['POST'])
@@ -104,6 +114,11 @@ def bulk_user_action():
     cursor = conn.cursor()
     for username in users:
         cursor.execute("UPDATE users SET active=%s WHERE username=%s", (True if action == 'activate' else False, username))
+        # Notify user
+        if action == 'activate':
+            create_notification(username, "Your account has been activated by an admin.", url="/profile")
+        elif action == 'deactivate':
+            create_notification(username, "Your account has been deactivated by an admin.", url="/profile")
     conn.commit()
     cursor.close()
     conn.close()

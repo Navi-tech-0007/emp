@@ -1,11 +1,18 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request, current_app
-from flask_login import login_user, logout_user
+from flask_login import login_user, logout_user, current_user, LoginManager
 from werkzeug.security import check_password_hash, generate_password_hash
 from forms import LoginForm
-from util import get_user_by_username, User, get_user_by_username
-import application
+from util import get_user_by_username, User, create_notification
 
 auth_bp = Blueprint('auth', __name__)
+login_manager = LoginManager()
+
+@login_manager.user_loader
+def load_user(username):
+    user_dict = get_user_by_username(username)
+    if user_dict:
+        return User(user_dict)
+    return None
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -32,16 +39,10 @@ def login():
                 user_obj = User(user)
                 login_user(user_obj)
                 session.permanent = True
-                session['user'] = user['username']
-                session['role'] = user.get('role', 'user')
-                session['employee_id'] = user['employee_id']
-                if user['username'] == 'root@gt.com':
-                    session['role'] = 'root'
                 return redirect(url_for('main.dashboard'))
         flash("Invalid username or password.", "danger")
         return redirect(url_for('auth.login', email=form.username.data))
 
-    # For GET requests or if form not submitted, just render the form
     email = request.args.get('email')
     return render_template('login_email.html', form=form, email=email)
 
@@ -62,19 +63,24 @@ def force_password_reset():
         hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
         cursor.execute("UPDATE users SET password=%s WHERE username=%s", (hashed_password, session['reset_user']))
         conn.commit()
-        cursor.execute("SELECT role FROM users WHERE username=%s", (session['reset_user'],))
+        cursor.execute("SELECT * FROM users WHERE username=%s", (session['reset_user'],))
         user = cursor.fetchone()
         cursor.close()
         conn.close()
-        session['user'] = session['reset_user']
-        session['role'] = user['role'] if user and 'role' in user else 'user'
-        session.pop('reset_user', None)
-        flash("Password reset successful. You are now logged in.", "success")
-        return redirect(url_for('main.dashboard'))
+        if user:
+            user_obj = User(user)
+            login_user(user_obj)
+            session.permanent = True
+            create_notification(user['username'], "Your password was reset.", url="/profile")
+            session.pop('reset_user', None)
+            flash("Password reset successful. You are now logged in.", "success")
+            return redirect(url_for('main.dashboard'))
+        flash("User not found for password reset.", "danger")
+        return redirect(url_for('auth.login'))
     return render_template('force_password_reset.html')
 
 @auth_bp.route('/logout')
 def logout():
-    session.pop('user', None)
-    session.pop('role', None)
-    return redirect(url_for('main.home'))
+    logout_user()
+    session.clear()  # This clears the entire session
+    return redirect(url_for('auth.login'))

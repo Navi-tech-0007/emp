@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, current_app, jsonify
 from flask_login import login_required, current_user
+from util import create_notification
 import mysql.connector
 import datetime
 
@@ -42,6 +43,30 @@ def center():
                     end_date
                 ))
                 conn.commit()
+                # After inserting the announcement
+                announcement_id = cursor.lastrowid
+                cursor.close()
+                # --- Notify all users in department and roles ---
+                cursor = conn.cursor()
+                if department and selected_roles:
+                    cursor.execute(
+                        "SELECT username FROM users WHERE department=%s AND role IN (%s)" %
+                        ("%s", ",".join(["%s"] * len(selected_roles))),
+                        tuple([department] + selected_roles)
+                    )
+                elif department:
+                    cursor.execute("SELECT username FROM users WHERE department=%s", (department,))
+                elif selected_roles:
+                    cursor.execute(
+                        "SELECT username FROM users WHERE role IN (%s)" %
+                        ",".join(["%s"] * len(selected_roles)),
+                        tuple(selected_roles)
+                    )
+                else:
+                    cursor.execute("SELECT username FROM users")
+                users_to_notify = [row[0] for row in cursor.fetchall()]
+                for username in users_to_notify:
+                    create_notification(username, f"New announcement: {title}", url=f"/api/announcement/{announcement_id}")
                 cursor.close()
                 conn.close()
                 # Stay on post section after posting
@@ -127,8 +152,7 @@ def center():
         'management_hub/center.html',
         announcements=announcements,
         departments=departments,
-        roles=roles,
-        user=current_user
+        roles=roles
     )
 
 # Optional: Delete Announcement
@@ -185,3 +209,24 @@ def edit_announcement():
     except Exception as e:
         pass
     return redirect(url_for('announcement.center', open='review'))
+
+@announcements_bp.route('/api/announcement/<int:announcement_id>', methods=['GET'])
+@login_required
+def get_announcement(announcement_id):
+    try:
+        conn = mysql.connector.connect(
+            host=current_app.config['DB_HOST'],
+            user=current_app.config['DB_USER'],
+            password=current_app.config['DB_PASSWORD'],
+            database=current_app.config['DB_NAME']
+        )
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, title, message, department, roles, start_date, end_date, date FROM announcements WHERE id=%s", (announcement_id,))
+        announcement = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if not announcement:
+            return jsonify({'success': False, 'error': 'Announcement not found'}), 404
+        return jsonify({'success': True, 'announcement': announcement})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500

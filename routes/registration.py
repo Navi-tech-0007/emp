@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
 from werkzeug.security import generate_password_hash
-from util import check_hr_code, get_next_employee_id
+from util import check_hr_code, get_next_employee_id, create_notification
 import datetime
 import secrets
 from flask_login import login_required, current_user
@@ -30,8 +30,6 @@ def register():
     role = hr_code_item.get('role', 'user')
     department = hr_code_item.get('department', '')
 
-
-
     employee_id = get_next_employee_id()
     hire_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
 
@@ -57,8 +55,8 @@ def register():
     cursor.close()
     conn.close()
 
-    session['user'] = email
-    session['role'] = role
+    # Notify user of successful registration
+    create_notification(email, "Welcome! Your account has been created.", url="/profile/{}".format(email))
 
     return jsonify({'success': True})
 
@@ -100,7 +98,7 @@ def generate_hr_code():
         roles = [row['role'] for row in cursor.fetchall()]
         cursor.close()
         conn.close()
-        return render_template('add-employee.html', departments=departments, roles=roles, user=current_user)
+        return render_template('add-employee.html', departments=departments, roles=roles,)
     data = request.get_json()
     email = data.get('email')
     role = data.get('role', 'user')
@@ -145,7 +143,7 @@ def view_hr_codes():
     codes = cursor.fetchall()
     cursor.close()
     conn.close()
-    return render_template('hr_codes.html', codes=codes, user=current_user)
+    return render_template('hr_codes.html', codes=codes, )
 
 @registration_bp.route('/hr/revoke_hr_code', methods=['POST'])
 def revoke_hr_code():

@@ -1,10 +1,10 @@
 from flask import Flask
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 import config
 
 # Import blueprints
 from routes.auth import auth_bp
-from routes.main import main_bp
+from routes.main import main_bp, get_unread_notifications
 from routes.registration import registration_bp
 from routes.admin import admin_bp
 from routes.schedule import schedule_bp
@@ -41,4 +41,13 @@ application.register_blueprint(leave_bp)
 application.register_blueprint(api_bp)
 application.register_blueprint(announcements_bp)
 
-# ...any other setup or helper functions...
+@application.context_processor
+def inject_notifications():
+    if current_user.is_authenticated:
+        notifications, unread_count = get_unread_notifications(current_user.username)
+        return dict(notifications=notifications, unread_notification_count=unread_count)
+    return dict(notifications=[], unread_notification_count=0)
+
+@application.context_processor
+def inject_user():
+    return dict(user=current_user)

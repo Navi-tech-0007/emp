@@ -1,9 +1,8 @@
 from flask import Blueprint, jsonify, request, session, current_app
-
 from werkzeug.security import generate_password_hash
 from flask_login import login_required, current_user
 import mysql.connector
-from util.notifications import create_notification
+from util import create_notification
 
 api_bp = Blueprint('api', __name__)
 
@@ -11,7 +10,7 @@ api_bp = Blueprint('api', __name__)
 @login_required
 def api_user(username):
     # Only allow HR, admin, or manager to edit
-    if request.method == 'PUT' and session.get('role') not in ['admin', 'hr', 'manager', 'root']:
+    if request.method == 'PUT' and (not hasattr(current_user, 'role') or current_user.role not in ['admin', 'hr', 'manager', 'root']):
         return jsonify({'success': False, 'error': 'Permission denied'}), 403
 
     conn = mysql.connector.connect(
@@ -41,6 +40,9 @@ def api_user(username):
         conn.commit()
         cursor.close()
         conn.close()
+        # Notify user
+        if username != current_user.username:
+            create_notification(username, "Your profile was updated by an admin.", url="/profile")
         return jsonify({'success': True})
 
     cursor.close()
@@ -66,6 +68,8 @@ def api_reset_password(username):
     conn.commit()
     cursor.close()
     conn.close()
+    # Notify user
+    create_notification(username, "Your password was reset.", url="/profile")
     return jsonify({'success': True})
 
 @api_bp.route('/api/leave', methods=['POST'])
@@ -78,9 +82,6 @@ def api_leave():
     end_date = data.get('end_date')
     reason = data.get('reason')
 
-    if not (leave_type and start_date and end_date):
-        return jsonify({'success': False, 'error': 'Missing fields'}), 400
-
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -88,6 +89,13 @@ def api_leave():
         database=current_app.config['DB_NAME']
     )
     cursor = conn.cursor()
+    cursor.execute("SELECT employee_id FROM users WHERE username=%s", (current_user.username,))
+    row = cursor.fetchone()
+    employee_id = row[0] if row else None
+
+    if not (leave_type and start_date and end_date):
+        return jsonify({'success': False, 'error': 'Missing fields'}), 400
+
     cursor.execute("""
         INSERT INTO leave_request (employee_id, leave_type, start_date, end_date, reason, status, requested_at)
         VALUES (%s, %s, %s, %s, %s, %s, NOW())
@@ -142,6 +150,25 @@ def mark_notifications_read():
     cursor.execute(
         f"UPDATE notifications SET is_read=1 WHERE id IN ({format_strings}) AND user_username=%s",
         (*ids, current_user.username)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'success': True})
+
+@api_bp.route('/api/notifications/mark_all_read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE notifications SET is_read=1 WHERE user_username=%s AND is_read=0",
+        (current_user.username,)
     )
     conn.commit()
     cursor.close()

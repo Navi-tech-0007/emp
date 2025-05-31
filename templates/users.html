@@ -156,8 +156,7 @@
         <div class="user-card-header">
           <div class="user-card-name">{{ user.name or '-' }}</div>
           <div class="user-card-actions">
-            
-            {% if session.get('role') in ['hr', 'admin'] %}
+            {% if current_user.role in ['hr', 'admin'] %}
               <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#editUserModal" data-username="{{ user.username }}">Edit</button>
               <button class="btn btn-warning btn-sm reset-password-btn" data-toggle="modal" data-target="#resetPasswordModal" data-username="{{ user.username }}">Reset Password</button>
             {% endif %}

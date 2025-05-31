@@ -33,121 +33,170 @@
     }
   }
 
-  .search-bar {
-    position: relative;
-    transition: max-width 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
-    max-width: 400px;
-  }
-  .search-bar.expanded {
-    max-width: 520px;
-    box-shadow: 0 6px 24px 0 rgba(33, 118, 193, 0.13);
-  }
-  .search-bar input.form-control {
-    border-radius: 2rem !important;
-    border: 1px solid #b6c6e3;
-    background: #e3ebfa;
-    box-shadow: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    z-index: 2;
-    position: relative;
-  }
-  .search-bar input.form-control:focus {
-    border-color: #2176c1;
-    box-shadow: 0 0 0 0.1rem #2176c133;
-  }
-  .search-bar #clearSearchBtn {
-    display: none;
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    padding: 0;
-    z-index: 3;
-  }
-  .search-results-dropdown {
-    position: absolute;
-    top: 105%;
-    left: 0;
-    width: 100%;
-    border-radius: 1.5rem;
-    border: 1px solid #b6c6e3;
-    box-shadow: 0 6px 24px 0 rgba(33, 118, 193, 0.10);
-    background: #fff;
-    overflow: hidden;
-    margin-top: 0.2rem;
-    z-index: 10;
-  }
-  .search-results-dropdown .list-group-item {
-    border: none;
-    border-radius: 0;
-    padding: 0.75rem 1.25rem;
-    transition: background 0.15s;
-    cursor: pointer;
-  }
-  .search-results-dropdown .list-group-item:hover,
-  .search-results-dropdown .list-group-item:focus {
+  .topbar-icons .btn-light:hover {
     background: #e3ebfa;
     color: #1976d2;
   }
-  .search-results-dropdown .text-muted {
-    color: #888 !important;
-    cursor: default;
+
+  .notification-message {
+    font-weight: 500;
+    color: #222;
+    margin-bottom: 0.2rem;
+    max-width: 220px;
+    white-space: normal;
+    word-break: break-word;
   }
 
-  .topbar-icons .icon-btn {
+  .icon-btn {
+    background: rgba(255,255,255,0.10);
+    border: 2px solid #e3ebfa;
+    border-radius: 1.3rem;
+    padding: 0.38rem 0.55rem;
+    color: #fff;
+    font-size: 1.15rem;
+    position: relative;
+    transition: 
+      background 0.18s, 
+      box-shadow 0.18s, 
+      color 0.18s, 
+      border-color 0.18s;
+    outline: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.12);
-    transition: background 0.18s, transform 0.18s;
-    position: relative;
-    margin-right: 0.25rem;
-    margin-left: 0.25rem;
-    font-size: 1.25rem;
-    color: #fff;
-    border: none;
-    outline: none;
-    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(33,118,193,0.07);
+    vertical-align: middle;
   }
-  .topbar-icons .icon-btn:hover,
-  .topbar-icons .icon-btn:focus {
-    background: #e3ebfa;
+  .icon-btn:hover, .icon-btn:focus {
+    background: #fff;
     color: #2176c1;
-    transform: scale(1.12);
-    text-decoration: none;
+    border-color: #b6d0f7;
+    box-shadow: 0 4px 16px rgba(33,118,193,0.13);
+    /* No floating effect */
   }
-  .topbar-icons .badge {
+  .icon-btn:active {
+    background: #e3ebfa;
+    color: #1976d2;
+    border-color: #1976d2;
+    box-shadow: 0 2px 8px rgba(33,118,193,0.10);
+    transform: scale(0.97);
+  }
+  .icon-btn .bi {
+    transition: color 0.18s, transform 0.18s;
+    font-size: 1.15rem;
+    vertical-align: middle;
+
+  }
+  .icon-badge {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    font-size: 0.7rem;
+    top: 6px;    /* Adjust as needed for vertical alignment */
+    right: 6px;  /* Adjust as needed for horizontal alignment */
+    min-width: 1em;
+    height: 1em;
+    padding: 0 0.22em;
+    font-size: 0.68em;
     background: #e53935;
     color: #fff;
-    padding: 0 5px;
-    border-radius: 8px;
-    min-width: 18px;
-    text-align: center;
-    line-height: 1.2;
+    border-radius: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
     box-shadow: 0 1px 4px rgba(229,57,53,0.12);
     pointer-events: none;
+    z-index: 2;
+    border: 2px solid #fff;
   }
-  .topbar-avatar {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
+  .icon-badge.bg-success {
+    background: #22c55e;
+  }
+  @keyframes fadeInBadge {
+    from { opacity: 0; transform: scale(0.7);}
+    to { opacity: 1; transform: scale(1);}
+  }
+  .animate-bounce {
+    animation: bounceBadge 1s infinite alternate;
+  }
+  @keyframes bounceBadge {
+    0% { transform: translateY(0);}
+    100% { transform: translateY(-4px);}
+  }
+
+  /* Make notification dropdown broader and visually separated */
+  .notification-dropdown-menu {
+    min-width: 420px;
+    max-width: 520px;
+    border-radius: 1.2rem;
+    box-shadow: 0 8px 32px rgba(33, 118, 193, 0.15), 0 1.5px 8px rgba(0,0,0,0.06);
+    background: #fff;
+    border: none;
+    padding: 0;
+    overflow: hidden;
+    animation: fadeInDown 0.22s;
+  }
+
+  /* Visual separation between notifications */
+  .notification-list {
+    max-height: 360px;
+    overflow-y: auto;
+    background: #f8fafd;
+    padding: 0.2rem 0;
+  }
+  .notification-item {
+    border-radius: 0.7rem;
+    transition: background 0.15s;
+    cursor: pointer;
+    background: #f8fafd; /* Use same color as .notification-list bg for ALL notifications */
+    border-left: 4px solid transparent;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1.1rem 1.5rem;
+    margin: 0.5rem 1rem;
+    box-shadow: 0 2px 8px rgba(33,118,193,0.04);
+    border-bottom: 2px solid #f0f4fa;
+  }
+  .notification-item:last-child {
+    border-bottom: none;
+  }
+  .notification-item.unread {
+    background: #f8fafd; /* No light blue, same as normal notifications */
+    border-left: 4px solid #2176c1;
+    font-weight: 600;
+  }
+  .notification-item:hover {
+    background: #f3f7fd;
+  }
+  .notification-item .notif-avatar {
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #fff;
-    box-shadow: 0 1px 4px rgba(33,118,193,0.10);
-    transition: box-shadow 0.18s;
+    margin-right: 0.5rem;
+    border: 2px solid #e3ebfa;
   }
-  .topbar-avatar:hover,
-  .topbar-avatar:focus {
-    box-shadow: 0 2px 8px rgba(33,118,193,0.18);
+  .notification-time {
+    font-size: 0.92em;
+    color: #888;
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(16px);}
+    to { opacity: 1; transform: translateY(0);}
+  }
+
+  .notification-item,
+  .notification-item:hover,
+  .notification-item:focus,
+  .notification-message,
+  .notification-time,
+  .dropdown-item,
+  .dropdown-item:focus,
+  .dropdown-item:hover,
+  a,
+  a:focus,
+  a:hover {
+    text-decoration: none !important;
   }
   </style>
   {% endblock %}
@@ -173,40 +222,98 @@
     </div>
 
     <!-- Center: Search Bar -->
-    <div class="search-bar flex-grow-1 d-none d-md-block position-relative" style="max-width: 400px; margin: 0 1rem;">
-      <i class="fa fa-search" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#1976d2;z-index:10;"></i>
-      <input type="text" class="form-control" id="globalSearchInput" placeholder="Search"
-             style="background:#e3ebfa; border:none; border-radius:2rem; padding-left:2.5rem; padding-right:2.5rem;">
-      <button type="button" id="clearSearchBtn"
-              style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;padding:0;z-index:11;">
-        <i class="fa fa-times" style="color:#888;font-size:1.1rem;"></i>
-      </button>
+    <div class="search-bar flex-grow-1 d-none d-md-block" style="max-width: 400px; margin: 0 1rem;">
+      <i class="fa fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#1976d2;"></i>
+      <input type="text" class="form-control" placeholder="Search" style="background:#e3ebfa; border:none; border-radius:2rem; padding-left:2.5rem;">
     </div>
 
     <!-- Right: Icons & Avatar -->
-    <div class="topbar-icons d-flex align-items-center gap-2 flex-shrink-0">
+    <div class="topbar-icons d-flex align-items-center gap-4 flex-shrink-0">
+      <!-- Notifications -->
+      <div class="position-relative dropdown dropdown-notification">
+        <a href="#" class="icon-btn dropdown-toggle"
+           id="notificationDropdown"
+           data-bs-toggle="dropdown"
+           aria-expanded="false"
+           aria-label="Show notifications"
+           title="Notifications">
+          <i class="bi bi-bell-fill"></i>
+          {% if unread_notification_count > 0 %}
+          <span class="icon-badge animate-bounce" title="{{ unread_notification_count }} unread notifications">{{ unread_notification_count }}</span>
+          {% endif %}
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end notification-dropdown-menu"
+            aria-labelledby="notificationDropdown">
+          <li class="dropdown-header px-4 py-2 text-uppercase small fw-bold text-secondary border-bottom">
+            Notifications
+            {% if unread_notification_count > 0 %}
+            <span class="badge bg-danger ms-2">{{ unread_notification_count }}</span>
+            {% endif %}
+          </li>
+          <li>
+            <div class="notification-list">
+              {% if notifications %}
+                {% for n in notifications %}
+                <a class="notification-item d-flex align-items-start gap-2 {% if not n.read %}unread{% endif %}" href="{{ n.url or '#' }}">
+                  <img src="{{ n.avatar_url or url_for('static', filename='default_avatar.png') }}" class="notif-avatar" alt="Avatar">
+                  <div class="flex-grow-1">
+                    <div class="notification-message" title="{{ n.message }}">{{ n.message }}</div>
+                    <div class="notification-time">{{ n.created_at.strftime('%b %d, %H:%M') }}</div>
+                    {% if n.action_url and n.action_label %}
+                      <a href="{{ n.action_url }}" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:1rem;padding:0.2rem 0.9rem;font-size:0.92em;">
+                        {{ n.action_label }}
+                      </a>
+                    {% endif %}
+                  </div>
+                  {% if not n.read %}
+                  <button class="btn btn-link p-0 ms-2" title="Mark as read"><i class="bi bi-check2"></i></button>
+                  {% endif %}
+                </a>
+                {% endfor %}
+              {% else %}
+              <div class="text-center text-muted py-5" style="font-size:1.1em;">
+                <i class="bi bi-bell-slash" style="font-size:2em;opacity:0.5;"></i><br>
+                No notifications to display.
+              </div>
+              {% endif %}
+            </div>
+          </li>
+          <li class="border-top mt-1 pt-2 px-3 d-flex justify-content-between align-items-center">
+            {% if unread_notification_count > 0 %}
+            <a href="#" id="markAllReadLink" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1">
+              <i class="bi bi-check2-all"></i> Mark all as read
+            </a>
+            {% endif %}
+            <a href="{{ url_for('api.get_notifications') }}" class="btn btn-link btn-sm text-primary px-2 py-1 ms-auto">
+              <i class="bi bi-list"></i> View all
+            </a>
+          </li>
+        </ul>
+      </div>
+      <!-- Messages -->
       <div class="position-relative">
-        <a href="#" class="icon-btn" aria-label="Notifications">
-          <i class="fa fa-bell"></i>
-          <span class="badge" style="position:absolute;top:0;right:0;font-size:0.65rem;background:#e53935;color:#fff;padding:0 4px;border-radius:8px;">28</span>
+        <a href="#" class="icon-btn" aria-label="Show messages" title="Messages">
+          <i class="bi bi-envelope-fill"></i>
+          <span class="icon-badge bg-success" title="31 unread messages">31</span>
         </a>
       </div>
-      <div class="position-relative">
-        <a href="#" class="icon-btn" aria-label="Messages">
-          <i class="fa fa-envelope"></i>
-          <span class="badge" style="position:absolute;top:0;right:0;font-size:0.65rem;background:#e53935;color:#fff;padding:0 4px;border-radius:8px;">31</span>
-        </a>
-      </div>
-      <!-- User Dropdown -->
+      <!-- User/Profile -->
       <div class="dropdown">
-        <button class="btn btn-link dropdown-toggle p-0" type="button" id="userMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="box-shadow:none;">
-          <img src="{{ user.photo_url if user.photo_url else url_for('static', filename='default_avatar.png') }}" alt="User" class="topbar-avatar">
+        <button class="icon-btn dropdown-toggle"
+                type="button"
+                id="userMenu"
+                data-bs-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="User menu"
+                title="User menu">
+          <i class="bi bi-person-circle"></i>
         </button>
-        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu" style="min-width:220px;border-radius:0.5rem;overflow:hidden;box-shadow:0 4px 16px;">
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu" style="min-width:220px;border-radius:0.5rem;overflow:hidden;box-shadow:0 4px 16px;">
           <div class="dropdown-header" style="background:#f8f9fa;text-align:center;padding:1rem;">
-            <img src="{{ user.photo_url if user.photo_url else url_for('static', filename='default_avatar.png') }}" alt="Avatar" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;border:2px solid #dee2e6;">
-            <h6 style="margin:0;font-weight:600;">{{ user.name or 'User Name' }}</h6>
-            <a href="{{ url_for('main.profile', username=user.username) }}" class="btn btn-outline-primary btn-sm btn-view-profile" style="font-size:0.875rem;padding:0.3rem 0.75rem;border-radius:1rem;margin-top:0.5rem;">View Profile</a>
+            <img src="{{ current_user.photo_url if current_user.photo_url else url_for('static', filename='default_avatar.png') }}" alt="Avatar" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;border:2px solid #dee2e6;">
+            <h6 style="margin:0;font-weight:600;">{{ current_user.name or 'User Name' }}</h6>
+            <a href="{{ url_for('main.profile', username=current_user.username) }}" class="btn btn-outline-primary btn-sm btn-view-profile" style="font-size:0.875rem;padding:0.3rem 0.75rem;border-radius:1rem;margin-top:0.5rem;">View Profile</a>
           </div>
           <div class="dropdown-divider" style="margin:0.5rem 0;"></div>
           <a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
@@ -226,7 +333,7 @@
           </a>
           <div class="dropdown-divider" style="margin:0.5rem 0;"></div>
           <a class="btn btn-outline-danger btn-sm signout-btn text-center" href="{{ url_for('auth.logout') }}" style="width:calc(100% - 2rem);margin:0.5rem 1rem;border-radius:1.5rem;text-align:center;transition:background-color 0.2s;">Sign Out</a>
-        </div>
+        </ul>
       </div>
     </div>
   </div>
@@ -266,6 +373,17 @@
   #global-loading-overlay.hide {
     opacity: 0;
     pointer-events: none;
+  }
+
+  /* Modern notification dropdown styles */
+  .dropdown-menu[aria-labelledby="notificationDropdown"] .dropdown-item:hover {
+    background: #f3f7fd;
+  }
+  .dropdown-menu[aria-labelledby="notificationDropdown"] .bg-primary {
+    background: #2176c1 !important;
+  }
+  .notification-item-unread {
+    background: #f0f6ff !important;
   }
   </style>
 
@@ -366,136 +484,15 @@
   });
 
   document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('globalSearchInput');
-    const clearBtn = document.getElementById('clearSearchBtn');
-    const searchBar = searchInput.closest('.search-bar');
-    let resultsDropdown;
-    // Example random suggestions (replace with your own or fetch from backend)
-    const randomSuggestions = [
-      {label: "Leave", url: "/leave", desc: "Request time off"},
-      {label: "Schedule", url: "/my_schedule", desc: "View your work schedule"},
-      {label: "Directory", url: "/directory", desc: "Employee directory"},
-      {label: "Management Hub", url: "/management_hub", desc: "HR/admin tools"},
-      {label: "Profile", url: "/profile/u2@gt.com", desc: "Your personal profile"}
-    ];
-
-    if (searchInput) {
-      // Create dropdown container if not already present
-      resultsDropdown = document.createElement('div');
-      resultsDropdown.className = 'search-results-dropdown list-group position-absolute w-100';
-      resultsDropdown.style.zIndex = 1050;
-      resultsDropdown.style.display = 'none';
-      searchInput.parentNode.appendChild(resultsDropdown);
-
-      // Expand bar on focus
-      searchInput.addEventListener('focus', function() {
-        searchBar.classList.add('expanded');
-        showRandomSuggestions();
-      });
-      // Collapse bar on blur (with delay for click)
-      searchInput.addEventListener('blur', function() {
-        setTimeout(() => {
-          searchBar.classList.remove('expanded');
-          resultsDropdown.style.display = 'none';
-        }, 150);
-      });
-
-      // Show random suggestions initially
-      function showRandomSuggestions() {
-        resultsDropdown.innerHTML = '';
-        randomSuggestions.forEach(item => {
-          const el = document.createElement('a');
-          el.className = 'list-group-item list-group-item-action';
-          el.href = item.url;
-          el.innerHTML = `<strong>${item.label}</strong><br><small>${item.desc}</small>`;
-          resultsDropdown.appendChild(el);
-        });
-        resultsDropdown.style.display = 'block';
-      }
-
-      // Show real results as user types
-      searchInput.addEventListener('input', function() {
-        const query = this.value.trim();
-        clearBtn.style.display = query.length > 0 ? 'block' : 'none';
-        if (query.length < 1) {
-          showRandomSuggestions();
-          return;
-        }
-        fetch(`/api/search?q=${encodeURIComponent(query)}`)
+    var markAll = document.getElementById('markAllReadLink');
+    if (markAll) {
+      markAll.onclick = function(e) {
+        e.preventDefault();
+        fetch("{{ url_for('api.mark_all_notifications_read') }}", {method: "POST"})
           .then(res => res.json())
-          .then(results => {
-            resultsDropdown.innerHTML = '';
-            if (results.length === 0) {
-              resultsDropdown.innerHTML = `<div class="list-group-item text-muted" style="cursor:default;">No matching results</div>`;
-              resultsDropdown.style.display = 'block';
-              return;
-            }
-            results.forEach(item => {
-              const el = document.createElement('a');
-              el.className = 'list-group-item list-group-item-action';
-              el.href = item.url;
-              el.innerHTML = `<strong>${item.label}</strong><br><small>${item.desc}</small>`;
-              resultsDropdown.appendChild(el);
-            });
-            resultsDropdown.style.display = 'block';
-          });
-      });
-
-      clearBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        clearBtn.style.display = 'none';
-        showRandomSuggestions();
-        searchInput.focus();
-      });
-
-      // Hide dropdown when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!searchInput.contains(e.target) && !resultsDropdown.contains(e.target) && e.target !== clearBtn) {
-          resultsDropdown.style.display = 'none';
-          searchBar.classList.remove('expanded');
-        }
-      });
+          .then(data => { if(data.success) location.reload(); });
+      };
     }
-  });
-
-  document.addEventListener('DOMContentLoaded', function() {
-    let loadingTimeout = null;
-
-    // Show overlay only if navigation takes longer than 200ms
-    function delayedShowLoading() {
-      loadingTimeout = setTimeout(() => {
-        showLoading();
-      }, 200); // adjust delay as needed
-    }
-
-    // Hide overlay and clear timeout
-    function clearLoading() {
-      clearTimeout(loadingTimeout);
-      hideLoading();
-    }
-
-    // Show overlay on normal link clicks (not for anchors, JS, or new tabs)
-    document.body.addEventListener('click', function(e) {
-      const link = e.target.closest('a[href]');
-      if (
-        link &&
-        link.target !== '_blank' &&
-        !link.href.startsWith('javascript:') &&
-        !link.href.startsWith('#') && // <-- This line prevents overlay for # links
-        !link.hasAttribute('data-bs-toggle') &&
-        link.getAttribute('href') !== '#'
-      ) {
-        delayedShowLoading();
-      }
-    });
-
-    document.body.addEventListener('submit', function(e) {
-      delayedShowLoading();
-    }, true);
-
-    // Hide overlay on page load (as you already do)
-    window.addEventListener('pageshow', clearLoading);
-    document.addEventListener('DOMContentLoaded', clearLoading);
   });
   </script>
 </body>

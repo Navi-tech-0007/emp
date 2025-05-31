@@ -3,6 +3,7 @@ import os
 from io import BytesIO
 from PIL import Image
 import mysql.connector
+from flask_login import UserMixin
 
 EXIF_ORIENTATION = 274  # Magic numbers from http://www.exiv2.org/tags.html
 
@@ -68,6 +69,7 @@ def get_user_by_username(username):
     return user
 
 def get_manager_by_department(department):
+    import mysql.connector
     from flask import current_app
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
@@ -77,13 +79,13 @@ def get_manager_by_department(department):
     )
     cursor = conn.cursor(dictionary=True)
     cursor.execute(
-        "SELECT * FROM users WHERE department=%s AND role IN ('manager') LIMIT 1",
+        "SELECT username FROM users WHERE department=%s AND role='manager'",
         (department,)
     )
-    manager = cursor.fetchone()
+    managers = [row['username'] for row in cursor.fetchall()]
     cursor.close()
     conn.close()
-    return manager
+    return managers
 
 def get_avatar_url(user):
     # Example: return a default avatar if no photo_url is set
@@ -136,22 +138,17 @@ def check_hr_code(hrcode):
 DEPARTMENTS = ["HR", "Food", "Overnight"]  # Example
 REQUESTABLE_LEAVE_TYPES = ["Vacation", "Sick", "Personal"]  # Example
 
-class User:
+class User(UserMixin):
     def __init__(self, user_dict):
-        self.id = user_dict.get('username')
-        self.username = user_dict.get('username')
+        self.username = user_dict['username']
+        self.name = user_dict.get('name')
+        self.email = user_dict.get('email')
         self.role = user_dict.get('role')
         self.employee_id = user_dict.get('employee_id')
-        self.is_active = user_dict.get('active', True)
-        self.name = user_dict.get('name')
+        # ... any other fields
+
     def get_id(self):
-        return self.id
-    def is_authenticated(self):
-        return True
-    def is_active(self):
-        return self.is_active
-    def is_anonymous(self):
-        return False
+        return self.username  # or whatever uniquely identifies the user
 
 def get_filtered_users(department=None, role=None, search=None):
     """Fetch users filtered by department, role, and search (name/email)."""

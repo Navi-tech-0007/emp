@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, session, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required, current_user
 import datetime
+from util import create_notification
 import mysql.connector
 
 schedule_bp = Blueprint('schedule', __name__)
@@ -27,6 +28,7 @@ def get_schedules_for_users_and_dates(user_ids, week_dates):
     return results
 
 @schedule_bp.route('/configure_schedule')
+@login_required
 def configure_schedule():
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
@@ -35,7 +37,6 @@ def configure_schedule():
         database=current_app.config['DB_NAME']
     )
     cursor = conn.cursor(dictionary=True)
-    # Use departments table, not users
     cursor.execute("SELECT name FROM departments ORDER BY name")
     departments = [row['name'] for row in cursor.fetchall()]
     selected_department = request.args.get('department', '')
@@ -107,10 +108,10 @@ def configure_schedule():
         now=datetime.datetime.utcnow(),
         week_day_date=week_day_date,
         mobile_date=mobile_date,
-        user=current_user
     )
 
 @schedule_bp.route('/update_schedule', methods=['POST'])
+@login_required
 def update_schedule():
     employee_id = request.form['employee_id']
     date = request.form['date']
@@ -119,7 +120,7 @@ def update_schedule():
     shift_type = request.form['shift_type']
     description = request.form.get('description', '')
     location = request.form.get('location', '')
-    created_by = session.get('user', 'unknown')
+    created_by = current_user.username
     start_datetime = f"{date} {start_time}:00"
     end_datetime = f"{date} {end_time}:00"
     conn = mysql.connector.connect(
@@ -148,8 +149,22 @@ def update_schedule():
             description=VALUES(description),
             location=VALUES(location),
             created_by=VALUES(created_by)
-    """, (employee_id, start_datetime, end_datetime, shift_type, description, location, session.get('user')))
+    """, (employee_id, start_datetime, end_datetime, shift_type, description, location, created_by))
     conn.commit()
+    # Get username for the employee_id
+    conn2 = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor2 = conn2.cursor(dictionary=True)
+    cursor2.execute("SELECT username FROM users WHERE employee_id=%s", (employee_id,))
+    user_row = cursor2.fetchone()
+    cursor2.close()
+    conn2.close()
+    if user_row:
+        create_notification(user_row['username'], "Your schedule was updated.", url="/my_schedule")
     cursor.close()
     conn.close()
     flash("Schedule updated.", "success")
@@ -159,6 +174,7 @@ def update_schedule():
     ))
 
 @schedule_bp.route('/edit_schedule', methods=['POST'])
+@login_required
 def edit_schedule():
     employee_id = request.form['employee_id']
     date = request.form['date']
@@ -169,7 +185,7 @@ def edit_schedule():
     location = request.form['location']
     department = request.form['department']
     week_offset = request.form['week_offset']
-    created_by = session['user']
+    created_by = current_user.username
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -194,12 +210,25 @@ def edit_schedule():
             VALUES (%s, %s, %s, %s, %s, %s, %s, 'active', NOW(), NOW())
         """, (employee_id, f"{date} {start_time}", f"{date} {end_time}", shift_type, description, location, created_by))
     conn.commit()
-    cursor.close()
-    conn.close()
+    # Notify user about shift edit
+    conn2 = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor2 = conn2.cursor(dictionary=True)
+    cursor2.execute("SELECT username FROM users WHERE employee_id=%s", (employee_id,))
+    user_row = cursor2.fetchone()
+    cursor2.close()
+    conn2.close()
+    if user_row:
+        create_notification(user_row['username'], "Your shift was edited.", url="/my_schedule")
     flash("Schedule updated.", "success")
     return redirect(url_for('schedule.configure_schedule', department=department, week_offset=week_offset))
 
 @schedule_bp.route('/delete_schedule', methods=['POST'])
+@login_required
 def delete_schedule():
     employee_id = request.form['employee_id']
     date = request.form['date']
@@ -215,8 +244,20 @@ def delete_schedule():
         (employee_id, date)
     )
     conn.commit()
-    cursor.close()
-    conn.close()
+    # Notify user about shift deletion
+    conn2 = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor2 = conn2.cursor(dictionary=True)
+    cursor2.execute("SELECT username FROM users WHERE employee_id=%s", (employee_id,))
+    user_row = cursor2.fetchone()
+    cursor2.close()
+    conn2.close()
+    if user_row:
+        create_notification(user_row['username'], "Your shift was deleted.", url="/my_schedule")
     flash("Schedule deleted.", "success")
     return redirect(url_for('schedule.configure_schedule',
         department=request.form.get('department', ''),
@@ -230,11 +271,7 @@ def schedule():
 @schedule_bp.route('/my_schedule')
 @login_required
 def my_schedule():
-    username = session.get('user')
-    if not username:
-        flash("You must be logged in to view your schedule.", "danger")
-        return redirect(url_for('auth.login'))
-
+    username = current_user.username
     week_start_str = request.args.get('week_start')
     nav = request.args.get('nav')
 
@@ -325,7 +362,7 @@ def my_schedule():
         diff = (end_dt - start_dt).total_seconds() / 3600.0
         if diff > 0:
             total_hours += diff
-    user_id = current_user.id
+    user_id = getattr(current_user, "id", None)
     # Example: count all shifts for this user
     cursor.execute(
         "SELECT COUNT(*) FROM schedule WHERE employee_id=%s AND DATE(start_datetime) BETWEEN %s AND %s",
@@ -342,5 +379,4 @@ def my_schedule():
         total_hours=total_hours,
         total_shifts=total_shifts,
         now=datetime.date.today(),  # Pass today's date
-        user=current_user
     )
