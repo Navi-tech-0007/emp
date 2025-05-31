@@ -179,3 +179,23 @@ def get_filtered_users(department=None, role=None, search=None):
     cursor.close()
     conn.close()
     return users
+
+def create_notification(user_username, message, url=None):
+    """Create a notification for a user."""
+    from flask import current_app
+    import mysql.connector
+
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO notifications (user_username, message, url) VALUES (%s, %s, %s)",
+        (user_username, message, url)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()

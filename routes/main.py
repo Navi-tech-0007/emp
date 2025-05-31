@@ -228,7 +228,9 @@ def api_search():
     if q:
         with ix.searcher() as searcher:
             parser = MultifieldParser(["label", "desc"], schema=ix.schema)
-            query = parser.parse(q)
+            # Add wildcards before and after for substring matching
+            query_str = f"*{q}*"
+            query = parser.parse(query_str)
             hits = searcher.search(query, limit=5)
             hits.fragmenter.charlimit = None
             for hit in hits:

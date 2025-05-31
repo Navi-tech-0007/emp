@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request, session, current_app
 from werkzeug.security import generate_password_hash
 from flask_login import login_required, current_user
 import mysql.connector
+from util.notifications import create_notification
 
 api_bp = Blueprint('api', __name__)
 
@@ -91,6 +92,57 @@ def api_leave():
         INSERT INTO leave_request (employee_id, leave_type, start_date, end_date, reason, status, requested_at)
         VALUES (%s, %s, %s, %s, %s, %s, NOW())
     """, (employee_id, leave_type, start_date, end_date, reason, 'Pending'))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    # Notify user
+    create_notification(current_user.username, f"Your leave request for {leave_type} from {start_date} to {end_date} was submitted.", url="/leave")
+
+    # Notify manager (example: get manager username from DB)
+    manager_username = get_manager_username_for_user(current_user.username)
+    if manager_username:
+        create_notification(manager_username, f"{current_user.username} submitted a leave request.", url="/management_hub")
+
+    return jsonify({'success': True})
+
+@api_bp.route('/api/notifications', methods=['GET'])
+@login_required
+def get_notifications():
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT * FROM notifications WHERE user_username=%s ORDER BY created_at DESC LIMIT 20",
+        (current_user.username,)
+    )
+    notifications = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify({'success': True, 'notifications': notifications})
+
+@api_bp.route('/api/notifications/mark_read', methods=['POST'])
+@login_required
+def mark_notifications_read():
+    ids = request.json.get('ids', [])
+    if not ids:
+        return jsonify({'success': False, 'error': 'No IDs provided'}), 400
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor()
+    format_strings = ','.join(['%s'] * len(ids))
+    cursor.execute(
+        f"UPDATE notifications SET is_read=1 WHERE id IN ({format_strings}) AND user_username=%s",
+        (*ids, current_user.username)
+    )
     conn.commit()
     cursor.close()
     conn.close()

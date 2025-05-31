@@ -32,6 +32,123 @@
       margin-top: 6rem !important;
     }
   }
+
+  .search-bar {
+    position: relative;
+    transition: max-width 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
+    max-width: 400px;
+  }
+  .search-bar.expanded {
+    max-width: 520px;
+    box-shadow: 0 6px 24px 0 rgba(33, 118, 193, 0.13);
+  }
+  .search-bar input.form-control {
+    border-radius: 2rem !important;
+    border: 1px solid #b6c6e3;
+    background: #e3ebfa;
+    box-shadow: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    z-index: 2;
+    position: relative;
+  }
+  .search-bar input.form-control:focus {
+    border-color: #2176c1;
+    box-shadow: 0 0 0 0.1rem #2176c133;
+  }
+  .search-bar #clearSearchBtn {
+    display: none;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    z-index: 3;
+  }
+  .search-results-dropdown {
+    position: absolute;
+    top: 105%;
+    left: 0;
+    width: 100%;
+    border-radius: 1.5rem;
+    border: 1px solid #b6c6e3;
+    box-shadow: 0 6px 24px 0 rgba(33, 118, 193, 0.10);
+    background: #fff;
+    overflow: hidden;
+    margin-top: 0.2rem;
+    z-index: 10;
+  }
+  .search-results-dropdown .list-group-item {
+    border: none;
+    border-radius: 0;
+    padding: 0.75rem 1.25rem;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .search-results-dropdown .list-group-item:hover,
+  .search-results-dropdown .list-group-item:focus {
+    background: #e3ebfa;
+    color: #1976d2;
+  }
+  .search-results-dropdown .text-muted {
+    color: #888 !important;
+    cursor: default;
+  }
+
+  .topbar-icons .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    transition: background 0.18s, transform 0.18s;
+    position: relative;
+    margin-right: 0.25rem;
+    margin-left: 0.25rem;
+    font-size: 1.25rem;
+    color: #fff;
+    border: none;
+    outline: none;
+    cursor: pointer;
+  }
+  .topbar-icons .icon-btn:hover,
+  .topbar-icons .icon-btn:focus {
+    background: #e3ebfa;
+    color: #2176c1;
+    transform: scale(1.12);
+    text-decoration: none;
+  }
+  .topbar-icons .badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 0.7rem;
+    background: #e53935;
+    color: #fff;
+    padding: 0 5px;
+    border-radius: 8px;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1.2;
+    box-shadow: 0 1px 4px rgba(229,57,53,0.12);
+    pointer-events: none;
+  }
+  .topbar-avatar {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(33,118,193,0.10);
+    transition: box-shadow 0.18s;
+  }
+  .topbar-avatar:hover,
+  .topbar-avatar:focus {
+    box-shadow: 0 2px 8px rgba(33,118,193,0.18);
+  }
   </style>
   {% endblock %}
   {% block styles %}{% endblock %}
@@ -56,25 +173,34 @@
     </div>
 
     <!-- Center: Search Bar -->
-    <div class="search-bar flex-grow-1 d-none d-md-block" style="max-width: 400px; margin: 0 1rem;">
-      <i class="fa fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#1976d2;"></i>
-      <input type="text" class="form-control" placeholder="Search" style="background:#e3ebfa; border:none; border-radius:2rem; padding-left:2.5rem;">
+    <div class="search-bar flex-grow-1 d-none d-md-block position-relative" style="max-width: 400px; margin: 0 1rem;">
+      <i class="fa fa-search" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#1976d2;z-index:10;"></i>
+      <input type="text" class="form-control" id="globalSearchInput" placeholder="Search"
+             style="background:#e3ebfa; border:none; border-radius:2rem; padding-left:2.5rem; padding-right:2.5rem;">
+      <button type="button" id="clearSearchBtn"
+              style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;padding:0;z-index:11;">
+        <i class="fa fa-times" style="color:#888;font-size:1.1rem;"></i>
+      </button>
     </div>
 
     <!-- Right: Icons & Avatar -->
-    <div class="topbar-icons d-flex align-items-center gap-3 flex-shrink-0">
+    <div class="topbar-icons d-flex align-items-center gap-2 flex-shrink-0">
       <div class="position-relative">
-        <a href="#" class="text-white"><i class="fa fa-bell fa-lg"></i></a>
-        <span class="badge" style="position:absolute;top:0;right:0;font-size:0.65rem;background:#e53935;color:#fff;padding:0 4px;border-radius:8px;">28</span>
+        <a href="#" class="icon-btn" aria-label="Notifications">
+          <i class="fa fa-bell"></i>
+          <span class="badge" style="position:absolute;top:0;right:0;font-size:0.65rem;background:#e53935;color:#fff;padding:0 4px;border-radius:8px;">28</span>
+        </a>
       </div>
       <div class="position-relative">
-        <a href="#" class="text-white"><i class="fa fa-envelope fa-lg"></i></a>
-        <span class="badge" style="position:absolute;top:0;right:0;font-size:0.65rem;background:#e53935;color:#fff;padding:0 4px;border-radius:8px;">31</span>
+        <a href="#" class="icon-btn" aria-label="Messages">
+          <i class="fa fa-envelope"></i>
+          <span class="badge" style="position:absolute;top:0;right:0;font-size:0.65rem;background:#e53935;color:#fff;padding:0 4px;border-radius:8px;">31</span>
+        </a>
       </div>
       <!-- User Dropdown -->
       <div class="dropdown">
-        <button class="btn btn-link dropdown-toggle p-0" type="button" id="userMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <img src="{{ user.photo_url if user.photo_url else url_for('static', filename='default_avatar.png') }}" alt="User" class="topbar-avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #fff;">
+        <button class="btn btn-link dropdown-toggle p-0" type="button" id="userMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="box-shadow:none;">
+          <img src="{{ user.photo_url if user.photo_url else url_for('static', filename='default_avatar.png') }}" alt="User" class="topbar-avatar">
         </button>
         <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu" style="min-width:220px;border-radius:0.5rem;overflow:hidden;box-shadow:0 4px 16px;">
           <div class="dropdown-header" style="background:#f8f9fa;text-align:center;padding:1rem;">
@@ -237,6 +363,139 @@
     const overlay = document.getElementById('global-loading-overlay');
     overlay.classList.add('hide');
     setTimeout(() => { overlay.style.display = 'none'; }, 350);
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('globalSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const searchBar = searchInput.closest('.search-bar');
+    let resultsDropdown;
+    // Example random suggestions (replace with your own or fetch from backend)
+    const randomSuggestions = [
+      {label: "Leave", url: "/leave", desc: "Request time off"},
+      {label: "Schedule", url: "/my_schedule", desc: "View your work schedule"},
+      {label: "Directory", url: "/directory", desc: "Employee directory"},
+      {label: "Management Hub", url: "/management_hub", desc: "HR/admin tools"},
+      {label: "Profile", url: "/profile/u2@gt.com", desc: "Your personal profile"}
+    ];
+
+    if (searchInput) {
+      // Create dropdown container if not already present
+      resultsDropdown = document.createElement('div');
+      resultsDropdown.className = 'search-results-dropdown list-group position-absolute w-100';
+      resultsDropdown.style.zIndex = 1050;
+      resultsDropdown.style.display = 'none';
+      searchInput.parentNode.appendChild(resultsDropdown);
+
+      // Expand bar on focus
+      searchInput.addEventListener('focus', function() {
+        searchBar.classList.add('expanded');
+        showRandomSuggestions();
+      });
+      // Collapse bar on blur (with delay for click)
+      searchInput.addEventListener('blur', function() {
+        setTimeout(() => {
+          searchBar.classList.remove('expanded');
+          resultsDropdown.style.display = 'none';
+        }, 150);
+      });
+
+      // Show random suggestions initially
+      function showRandomSuggestions() {
+        resultsDropdown.innerHTML = '';
+        randomSuggestions.forEach(item => {
+          const el = document.createElement('a');
+          el.className = 'list-group-item list-group-item-action';
+          el.href = item.url;
+          el.innerHTML = `<strong>${item.label}</strong><br><small>${item.desc}</small>`;
+          resultsDropdown.appendChild(el);
+        });
+        resultsDropdown.style.display = 'block';
+      }
+
+      // Show real results as user types
+      searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+        if (query.length < 1) {
+          showRandomSuggestions();
+          return;
+        }
+        fetch(`/api/search?q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(results => {
+            resultsDropdown.innerHTML = '';
+            if (results.length === 0) {
+              resultsDropdown.innerHTML = `<div class="list-group-item text-muted" style="cursor:default;">No matching results</div>`;
+              resultsDropdown.style.display = 'block';
+              return;
+            }
+            results.forEach(item => {
+              const el = document.createElement('a');
+              el.className = 'list-group-item list-group-item-action';
+              el.href = item.url;
+              el.innerHTML = `<strong>${item.label}</strong><br><small>${item.desc}</small>`;
+              resultsDropdown.appendChild(el);
+            });
+            resultsDropdown.style.display = 'block';
+          });
+      });
+
+      clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        clearBtn.style.display = 'none';
+        showRandomSuggestions();
+        searchInput.focus();
+      });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !resultsDropdown.contains(e.target) && e.target !== clearBtn) {
+          resultsDropdown.style.display = 'none';
+          searchBar.classList.remove('expanded');
+        }
+      });
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    let loadingTimeout = null;
+
+    // Show overlay only if navigation takes longer than 200ms
+    function delayedShowLoading() {
+      loadingTimeout = setTimeout(() => {
+        showLoading();
+      }, 200); // adjust delay as needed
+    }
+
+    // Hide overlay and clear timeout
+    function clearLoading() {
+      clearTimeout(loadingTimeout);
+      hideLoading();
+    }
+
+    // Show overlay on normal link clicks (not for anchors, JS, or new tabs)
+    document.body.addEventListener('click', function(e) {
+      const link = e.target.closest('a[href]');
+      if (
+        link &&
+        link.target !== '_blank' &&
+        !link.href.startsWith('javascript:') &&
+        !link.href.startsWith('#') && // <-- This line prevents overlay for # links
+        !link.hasAttribute('data-bs-toggle') &&
+        link.getAttribute('href') !== '#'
+      ) {
+        delayedShowLoading();
+      }
+    });
+
+    document.body.addEventListener('submit', function(e) {
+      delayedShowLoading();
+    }, true);
+
+    // Hide overlay on page load (as you already do)
+    window.addEventListener('pageshow', clearLoading);
+    document.addEventListener('DOMContentLoaded', clearLoading);
   });
   </script>
 </body>
