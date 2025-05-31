@@ -110,6 +110,39 @@
   {% endblock %}
   </div>
 
+  <!-- Global Loading Overlay -->
+  <div id="global-loading-overlay" style="display:none;position:fixed;z-index:5000;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.7);backdrop-filter:blur(2px);align-items:center;justify-content:center;transition:opacity 0.3s;">
+    <div style="text-align:center;">
+      <div class="modern-spinner"></div>
+      <div style="margin-top:1.2rem;color:#2176c1;font-weight:600;letter-spacing:0.03em;font-size:1.1rem;">
+        Loading, please wait...
+      </div>
+    </div>
+  </div>
+  <style>
+  .modern-spinner {
+    width: 3.5rem;
+    height: 3.5rem;
+    border: 0.4rem solid #e3ebfa;
+    border-top: 0.4rem solid #2176c1;
+    border-radius: 50%;
+    animation: spin-modern 0.8s linear infinite;
+    margin: 0 auto;
+  }
+  @keyframes spin-modern {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+  }
+  #global-loading-overlay {
+    opacity: 1;
+    transition: opacity 0.3s;
+  }
+  #global-loading-overlay.hide {
+    opacity: 0;
+    pointer-events: none;
+  }
+  </style>
+
   <!-- Bootstrap 5 JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Font Awesome JS (optional, for some icon features) -->
@@ -133,7 +166,6 @@
   <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   {% block extra_js %}{% endblock %}
 
   <script>
@@ -145,6 +177,66 @@
         alert('Element clicked!');
       };
     }
+
+    var yourForm = document.getElementById('yourForm');
+    if (yourForm) {
+      yourForm.addEventListener('submit', function(e) {
+        showLoading();
+        // ...submit logic...
+      });
+    }
+
+    var reviewStatusForm = document.getElementById('reviewStatusForm');
+    if (reviewStatusForm) {
+      reviewStatusForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        showLoading();
+        // ...fetch logic...
+        fetch(action, { method: 'POST' })
+          .then(response => response.json())
+          .then(data => {
+            // TODO: handle response data
+          })
+          .finally(() => hideLoading());
+      });
+    }
+
+    var saveBtn = document.getElementById('saveBtn');
+    var saveSpinner = document.getElementById('saveSpinner');
+    if (saveBtn && saveSpinner) {
+      saveBtn.disabled = true;
+      saveSpinner.classList.remove('d-none');
+      // On finish:
+      saveBtn.disabled = false;
+      saveSpinner.classList.add('d-none');
+    }
+  });
+
+
+  function showLoading() {
+    const overlay = document.getElementById('global-loading-overlay');
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.classList.remove('hide'), 10); // fade in
+  }
+
+  function hideLoading() {
+    const overlay = document.getElementById('global-loading-overlay');
+    overlay.classList.add('hide');
+    setTimeout(() => { overlay.style.display = 'none'; }, 350);
+  }
+
+  // Always hide overlay on page show (back/forward navigation)
+  window.addEventListener('pageshow', function() {
+    const overlay = document.getElementById('global-loading-overlay');
+    overlay.classList.add('hide');
+    setTimeout(() => { overlay.style.display = 'none'; }, 350);
+  });
+
+  // Also hide overlay on DOMContentLoaded (initial load)
+  document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('global-loading-overlay');
+    overlay.classList.add('hide');
+    setTimeout(() => { overlay.style.display = 'none'; }, 350);
   });
   </script>
 </body>
