@@ -382,6 +382,11 @@ document.getElementById('markAllReadLink').onclick = function(e) {
     .then(data => { if(data.success) location.reload(); });
 };
 </script>
+
+<!-- Bootstrap JS, Popper.js, and jQuery (required for Bootstrap 4 navbar toggler) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
 {% endblock %}

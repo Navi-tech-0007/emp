@@ -21,326 +21,138 @@
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   {% block extra_css %}
-  <style>
-  /* Add more spacing below the fixed topbar for all pages */
-  .main-content-spacing {
-    margin-top: 8rem !important; /* Increased space under topbar */
-    min-height: 200px;
-  }
-  @media (max-width: 900px) {
-    .main-content-spacing {
-      margin-top: 6rem !important;
-    }
-  }
-
-  .topbar-icons .btn-light:hover {
-    background: #e3ebfa;
-    color: #1976d2;
-  }
-
-  .notification-message {
-    font-weight: 500;
-    color: #222;
-    margin-bottom: 0.2rem;
-    max-width: 220px;
-    white-space: normal;
-    word-break: break-word;
-  }
-
-  .icon-btn {
-    background: rgba(255,255,255,0.10);
-    border: 2px solid #e3ebfa;
-    border-radius: 1.3rem;
-    padding: 0.38rem 0.55rem;
-    color: #fff;
-    font-size: 1.15rem;
-    position: relative;
-    transition: 
-      background 0.18s, 
-      box-shadow 0.18s, 
-      color 0.18s, 
-      border-color 0.18s;
-    outline: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 1px 4px rgba(33,118,193,0.07);
-    vertical-align: middle;
-  }
-  .icon-btn:hover, .icon-btn:focus {
-    background: #fff;
-    color: #2176c1;
-    border-color: #b6d0f7;
-    box-shadow: 0 4px 16px rgba(33,118,193,0.13);
-    /* No floating effect */
-  }
-  .icon-btn:active {
-    background: #e3ebfa;
-    color: #1976d2;
-    border-color: #1976d2;
-    box-shadow: 0 2px 8px rgba(33,118,193,0.10);
-    transform: scale(0.97);
-  }
-  .icon-btn .bi {
-    transition: color 0.18s, transform 0.18s;
-    font-size: 1.15rem;
-    vertical-align: middle;
-
-  }
-  .icon-badge {
-    position: absolute;
-    top: 6px;    /* Adjust as needed for vertical alignment */
-    right: 6px;  /* Adjust as needed for horizontal alignment */
-    min-width: 1em;
-    height: 1em;
-    padding: 0 0.22em;
-    font-size: 0.68em;
-    background: #e53935;
-    color: #fff;
-    border-radius: 1em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    box-shadow: 0 1px 4px rgba(229,57,53,0.12);
-    pointer-events: none;
-    z-index: 2;
-    border: 2px solid #fff;
-  }
-  .icon-badge.bg-success {
-    background: #22c55e;
-  }
-  @keyframes fadeInBadge {
-    from { opacity: 0; transform: scale(0.7);}
-    to { opacity: 1; transform: scale(1);}
-  }
-  .animate-bounce {
-    animation: bounceBadge 1s infinite alternate;
-  }
-  @keyframes bounceBadge {
-    0% { transform: translateY(0);}
-    100% { transform: translateY(-4px);}
-  }
-
-  /* Make notification dropdown broader and visually separated */
-  .notification-dropdown-menu {
-    min-width: 420px;
-    max-width: 520px;
-    border-radius: 1.2rem;
-    box-shadow: 0 8px 32px rgba(33, 118, 193, 0.15), 0 1.5px 8px rgba(0,0,0,0.06);
-    background: #fff;
-    border: none;
-    padding: 0;
-    overflow: hidden;
-    animation: fadeInDown 0.22s;
-  }
-
-  /* Visual separation between notifications */
-  .notification-list {
-    max-height: 360px;
-    overflow-y: auto;
-    background: #f8fafd;
-    padding: 0.2rem 0;
-  }
-  .notification-item {
-    border-radius: 0.7rem;
-    transition: background 0.15s;
-    cursor: pointer;
-    background: #f8fafd; /* Use same color as .notification-list bg for ALL notifications */
-    border-left: 4px solid transparent;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1.1rem 1.5rem;
-    margin: 0.5rem 1rem;
-    box-shadow: 0 2px 8px rgba(33,118,193,0.04);
-    border-bottom: 2px solid #f0f4fa;
-  }
-  .notification-item:last-child {
-    border-bottom: none;
-  }
-  .notification-item.unread {
-    background: #f8fafd; /* No light blue, same as normal notifications */
-    border-left: 4px solid #2176c1;
-    font-weight: 600;
-  }
-  .notification-item:hover {
-    background: #f3f7fd;
-  }
-  .notification-item .notif-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 0.5rem;
-    border: 2px solid #e3ebfa;
-  }
-  .notification-time {
-    font-size: 0.92em;
-    color: #888;
-  }
-
-  @keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(16px);}
-    to { opacity: 1; transform: translateY(0);}
-  }
-
-  .notification-item,
-  .notification-item:hover,
-  .notification-item:focus,
-  .notification-message,
-  .notification-time,
-  .dropdown-item,
-  .dropdown-item:focus,
-  .dropdown-item:hover,
-  a,
-  a:focus,
-  a:hover {
-    text-decoration: none !important;
-  }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   {% endblock %}
   {% block styles %}{% endblock %}
 </head>
 <body>
-  <!-- Topbar START -->
-  <div class="topbar d-flex align-items-center justify-content-between" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1030; background: #2176c1; padding: 0.75rem 2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.07);">
-    <!-- Left: Logo & Brand -->
-    <div class="d-flex align-items-center flex-shrink-0" style="min-width:0;">
-      <!-- Hamburger menu button: only on mobile -->
-      <button id="mobileSidebarToggle" aria-label="Open menu" class="hamburger d-flex d-md-none align-items-center justify-content-center me-2" type="button" style="background:none;border:none;">
-        <span class="hamburger-box">
-          <span class="hamburger-inner"></span>
-        </span>
-      </button>
-      <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.dashboard') }}" style="margin-right: 1.5rem;">
-        <span style="background:#fff; border-radius:12px; padding:4px 4px 4px 4px; display:flex; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.07);">
-          <img src="{{ url_for('static', filename='logo_gt.png') }}" alt="Logo" style="height:32px; width:32px; display:block;">
-        </span>
-        <span style="color:#fff; font-weight:600; margin-left:8px;">GlobalTech</span>
-      </a>
-    </div>
-
-    <!-- Center: Search Bar -->
-    <div class="search-bar flex-grow-1 d-none d-md-block" style="max-width: 400px; margin: 0 1rem;">
-      <i class="fa fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#1976d2;"></i>
-      <input type="text" class="form-control" placeholder="Search" style="background:#e3ebfa; border:none; border-radius:2rem; padding-left:2.5rem;">
-    </div>
-
-    <!-- Right: Icons & Avatar -->
-    <div class="topbar-icons d-flex align-items-center gap-4 flex-shrink-0">
-      <!-- Notifications -->
-      <div class="position-relative dropdown dropdown-notification">
-        <a href="#" class="icon-btn dropdown-toggle"
-           id="notificationDropdown"
-           data-bs-toggle="dropdown"
-           aria-expanded="false"
-           aria-label="Show notifications"
-           title="Notifications">
-          <i class="bi bi-bell-fill"></i>
-          {% if unread_notification_count > 0 %}
-          <span class="icon-badge animate-bounce" title="{{ unread_notification_count }} unread notifications">{{ unread_notification_count }}</span>
-          {% endif %}
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end notification-dropdown-menu"
-            aria-labelledby="notificationDropdown">
-          <li class="dropdown-header px-4 py-2 text-uppercase small fw-bold text-secondary border-bottom">
-            Notifications
-            {% if unread_notification_count > 0 %}
-            <span class="badge bg-danger ms-2">{{ unread_notification_count }}</span>
-            {% endif %}
-          </li>
-          <li>
-            <div class="notification-list">
-              {% if notifications %}
-                {% for n in notifications %}
-                <a class="notification-item d-flex align-items-start gap-2 {% if not n.read %}unread{% endif %}" href="{{ n.url or '#' }}">
-                  <img src="{{ n.avatar_url or url_for('static', filename='default_avatar.png') }}" class="notif-avatar" alt="Avatar">
-                  <div class="flex-grow-1">
-                    <div class="notification-message" title="{{ n.message }}">{{ n.message }}</div>
-                    <div class="notification-time">{{ n.created_at.strftime('%b %d, %H:%M') }}</div>
-                    {% if n.action_url and n.action_label %}
-                      <a href="{{ n.action_url }}" class="btn btn-sm btn-outline-primary mt-2" style="border-radius:1rem;padding:0.2rem 0.9rem;font-size:0.92em;">
-                        {{ n.action_label }}
-                      </a>
-                    {% endif %}
-                  </div>
-                  {% if not n.read %}
-                  <button class="btn btn-link p-0 ms-2" title="Mark as read"><i class="bi bi-check2"></i></button>
-                  {% endif %}
-                </a>
-                {% endfor %}
-              {% else %}
-              <div class="text-center text-muted py-5" style="font-size:1.1em;">
-                <i class="bi bi-bell-slash" style="font-size:2em;opacity:0.5;"></i><br>
-                No notifications to display.
-              </div>
-              {% endif %}
-            </div>
-          </li>
-          <li class="border-top mt-1 pt-2 px-3 d-flex justify-content-between align-items-center">
-            {% if unread_notification_count > 0 %}
-            <a href="#" id="markAllReadLink" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1">
-              <i class="bi bi-check2-all"></i> Mark all as read
-            </a>
-            {% endif %}
-            <a href="{{ url_for('api.get_notifications') }}" class="btn btn-link btn-sm text-primary px-2 py-1 ms-auto">
-              <i class="bi bi-list"></i> View all
-            </a>
-          </li>
-        </ul>
-      </div>
-      <!-- Messages -->
-      <div class="position-relative">
-        <a href="#" class="icon-btn" aria-label="Show messages" title="Messages">
-          <i class="bi bi-envelope-fill"></i>
-          <span class="icon-badge bg-success" title="31 unread messages">31</span>
-        </a>
-      </div>
-      <!-- User/Profile -->
-      <div class="dropdown">
-        <button class="icon-btn dropdown-toggle"
+  <!-- Redesigned Topbar START -->
+  <nav class="topbar navbar navbar-expand-lg navbar-dark shadow-sm"
+     style="position:fixed;top:0;left:0;right:0;z-index:1030;
+            background:#1a2233;
+            padding:0.5rem 2rem;
+            border-bottom:1.5px solid #2176c1;">
+    <div class="container-fluid d-flex align-items-center justify-content-between px-0">
+      <!-- Left: Hamburger & Logo -->
+      <div class="d-flex align-items-center gap-2 flex-shrink-0">
+        <!-- Mobile menu toggle button -->
+        <button id="mobileSidebarToggle" aria-label="Open menu"
+                class="btn btn-outline-light d-flex d-md-none align-items-center justify-content-center me-2"
                 type="button"
-                id="userMenu"
-                data-bs-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false"
-                aria-label="User menu"
-                title="User menu">
-          <i class="bi bi-person-circle"></i>
+                style="border-radius:50%;padding:0.4rem 0.6rem;">
+          <i class="fa fa-bars"></i>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu" style="min-width:220px;border-radius:0.5rem;overflow:hidden;box-shadow:0 4px 16px;">
-          <div class="dropdown-header" style="background:#f8f9fa;text-align:center;padding:1rem;">
-            <img src="{{ current_user.photo_url if current_user.photo_url else url_for('static', filename='default_avatar.png') }}" alt="Avatar" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;border:2px solid #dee2e6;">
-            <h6 style="margin:0;font-weight:600;">{{ current_user.name or 'User Name' }}</h6>
-            <a href="{{ url_for('main.profile', username=current_user.username) }}" class="btn btn-outline-primary btn-sm btn-view-profile" style="font-size:0.875rem;padding:0.3rem 0.75rem;border-radius:1rem;margin-top:0.5rem;">View Profile</a>
-          </div>
-          <div class="dropdown-divider" style="margin:0.5rem 0;"></div>
-          <a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
-            <span class="item-label"><i class="fas fa-home"></i> Home</span>
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.dashboard') }}" style="margin-right:1.5rem;">
+          <img src="{{ url_for('static', filename='logo_gt.png') }}" alt="Logo"
+             style="height:36px;width:36px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);background:#e3ebfa;padding:2px;">
+          <span style="color:#fff;font-weight:700;margin-left:10px;font-size:1.25rem;letter-spacing:1px;">GlobalTech</span>
+        </a>
+      </div>
+      <!-- Center: Search Bar -->
+      <form class="d-none d-md-flex flex-grow-1 mx-3" style="max-width:400px;position:relative;">
+        <input type="text" class="form-control rounded-pill ps-5"
+             placeholder="Search..."
+             style="background:#24304a;color:#fff;border:none;">
+      <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#2176c1;">
+        <i class="fa fa-search"></i>
+      </span>
+      </form>
+      <!-- Right: Icons & Avatar -->
+      <div class="d-flex align-items-center gap-3 flex-shrink-0">
+        <!-- Notifications -->
+        <div class="dropdown">
+          <a href="#" class="btn btn-light position-relative rounded-circle shadow-sm"
+           id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+           aria-label="Show notifications"
+           style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#24304a;border:none;">
+          <i class="fa fa-bell" style="color:#2176c1;"></i>
+          {% if unread_notification_count > 0 %}
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.75em;">
+            {{ unread_notification_count }}
+          </span>
+          {% endif %}
           </a>
-          <a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
-            <span class="item-label"><i class="fas fa-user"></i> My Account</span> <i class="fas fa-chevron-right ml-2"></i>
-          </a>
-          <a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
-            <span class="item-label"><i class="fas fa-star"></i> Favorites</span>
-          </a>
-          <a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
-            <span class="item-label"><i class="fas fa-chart-line"></i> My Reports</span>
-          </a>
-          <a class="dropdown-item" href="{{ url_for('main.dashboard') }}">
-            <span class="item-label"><i class="fas fa-life-ring"></i> Recovery Assistant</span> <i class="fas fa-chevron-right ml-2"></i>
-          </a>
-          <div class="dropdown-divider" style="margin:0.5rem 0;"></div>
-          <a class="btn btn-outline-danger btn-sm signout-btn text-center" href="{{ url_for('auth.logout') }}" style="width:calc(100% - 2rem);margin:0.5rem 1rem;border-radius:1.5rem;text-align:center;transition:background-color 0.2s;">Sign Out</a>
-        </ul>
+          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationDropdown" style="min-width:340px; max-height:420px; overflow-y:auto;">
+            <li class="dropdown-header px-4 py-2 text-uppercase small fw-bold text-secondary border-bottom d-flex justify-content-between align-items-center">
+              <span>Notifications</span>
+              {% if unread_notification_count > 0 %}
+                <span class="badge bg-danger ms-2">{{ unread_notification_count }}</span>
+              {% endif %}
+            </li>
+            <li>
+              <div class="notification-list" style="max-height:320px; overflow-y:auto;">
+                {% if notifications %}
+                  {% for n in notifications %}
+                  <a class="dropdown-item d-flex align-items-start gap-2 py-3 border-bottom {% if not n.read %}bg-light{% endif %}" href="{{ n.url or '#' }}">
+                    <img src="{{ n.avatar_url or url_for('static', filename='default_avatar.png') }}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;">
+                    <div class="flex-grow-1">
+                      <div class="fw-semibold" title="{{ n.message }}">{{ n.message }}</div>
+                      <div class="small text-muted">{{ n.created_at.strftime('%b %d, %H:%M') }}</div>
+                      {% if n.action_url and n.action_label %}
+                        <a href="{{ n.action_url }}" class="btn btn-outline-primary btn-sm mt-2" style="border-radius:1rem;padding:0.2rem 0.9rem;font-size:0.92em;">
+                          {{ n.action_label }}
+                        </a>
+                      {% endif %}
+                    </div>
+                    {% if not n.read %}
+                    <button class="btn btn-link p-0 ms-2" title="Mark as read"><i class="fa fa-check"></i></button>
+                    {% endif %}
+                  </a>
+                  {% endfor %}
+                {% else %}
+                <div class="text-center text-muted py-5" style="font-size:1.1em;">
+                  <i class="fa fa-bell-slash" style="font-size:2em;opacity:0.5;"></i><br>
+                  No notifications to display.
+                </div>
+                {% endif %}
+              </div>
+            </li>
+            <li class="border-top mt-1 pt-2 px-3 d-flex justify-content-between align-items-center">
+              {% if unread_notification_count > 0 %}
+              <a href="#" id="markAllReadLink" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1">
+                <i class="fa fa-check-double"></i> Mark all as read
+              </a>
+              {% endif %}
+              <a href="#" class="btn btn-link btn-sm text-primary px-2 py-1 ms-auto"
+                 data-bs-toggle="modal" data-bs-target="#allNotificationsModal">
+                <i class="fa fa-list"></i> View all
+              </a>
+            </li>
+          </ul>
+        </div>
+        <!-- User/Profile -->
+        <div class="dropdown">
+          <button class="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                type="button" id="userMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                aria-label="User menu"
+                style="width:40px;height:40px;background:#24304a;border:none;">
+          <img src="{{ current_user.photo_url if current_user.photo_url else url_for('static', filename='default_avatar.png') }}"
+               alt="Avatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userMenu" style="min-width:220px;border-radius:0.5rem;overflow:hidden;">
+            <div class="dropdown-header bg-light text-center p-3">
+              <img src="{{ current_user.photo_url if current_user.photo_url else url_for('static', filename='default_avatar.png') }}" alt="Avatar" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-bottom:0.5rem;border:2px solid #dee2e6;">
+              <h6 class="mb-0 fw-bold">{{ current_user.name or 'User Name' }}</h6>
+              <a href="{{ url_for('main.profile', username=current_user.username) }}" class="btn btn-outline-primary btn-sm mt-2" style="font-size:0.875rem;padding:0.3rem 0.75rem;border-radius:1rem;">View Profile</a>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="{{ url_for('main.dashboard') }}"><i class="fa fa-home me-2"></i> Home</a>
+            <a class="dropdown-item" href="{{ url_for('main.profile', username=current_user.username) }}"><i class="fa fa-user me-2"></i> My Account</a>
+            <a class="dropdown-item" href="#"><i class="fa fa-star me-2"></i> Favorites</a>
+            <a class="dropdown-item" href="#"><i class="fa fa-chart-line me-2"></i> My Reports</a>
+            <a class="dropdown-item" href="#"><i class="fa fa-life-ring me-2"></i> Recovery Assistant</a>
+            <div class="dropdown-divider"></div>
+            <a class="btn btn-outline-danger btn-sm w-100 my-2" href="{{ url_for('auth.logout') }}" style="border-radius:1.5rem;">Sign Out</a>
+          </ul>
+        </div>
       </div>
     </div>
-  </div>
-  <!-- Topbar END -->
-  <div class="container main-content-spacing" style="margin-top: 8rem; min-height:200px;">
-  {% block content %}
-  {% endblock %}
+  </nav>
+  <!-- Redesigned Topbar END -->
+
+  <div class="container main-content-spacing" style="margin-top: 6.5rem; min-height:200px;">
+    {% block content %}
+    {% endblock %}
   </div>
 
   <!-- Global Loading Overlay -->
@@ -384,6 +196,7 @@
   }
   .notification-item-unread {
     background: #f0f6ff !important;
+    border-left: 4px solid #2176c1;
   }
   </style>
 
@@ -493,7 +306,87 @@
           .then(data => { if(data.success) location.reload(); });
       };
     }
+
+    var markAllModal = document.getElementById('markAllReadLinkModal');
+    if (markAllModal) {
+      markAllModal.onclick = function(e) {
+        e.preventDefault();
+        fetch("{{ url_for('api.mark_all_notifications_read') }}", {method: "POST"})
+          .then(res => res.json())
+          .then(data => { if(data.success) location.reload(); });
+      };
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.mark-read-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const notifId = this.getAttribute('data-id');
+        fetch(`/api/notifications/${notifId}/mark_read`, {method: "POST"})
+          .then(res => res.json())
+          .then(data => {
+            if(data.success) location.reload();
+          });
+      });
+    });
   });
   </script>
+
+  <!-- All Notifications Modal -->
+<div class="modal fade" id="allNotificationsModal" tabindex="-1" aria-labelledby="allNotificationsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:1rem;">
+      <div class="modal-header" style="background:#1a2233;">
+        <h5 class="modal-title text-white" id="allNotificationsModalLabel">
+          <i class="fa fa-bell me-2"></i>All Notifications
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="list-group list-group-flush">
+          {% if notifications %}
+            {% for n in notifications %}
+              <div class="list-group-item list-group-item-action d-flex align-items-start gap-3 py-3 {% if not n.read %}notification-item-unread{% endif %}"
+                   style="border-bottom:1px solid #e3ebfa;">
+                <img src="{{ n.avatar_url or url_for('static', filename='default_avatar.png') }}"
+                     class="rounded-circle" style="width:40px;height:40px;object-fit:cover;">
+                <div class="flex-grow-1">
+                  <div class="fw-semibold" title="{{ n.message }}">{{ n.message }}</div>
+                  <div class="small text-muted">{{ n.created_at.strftime('%b %d, %H:%M') }}</div>
+                  {% if n.action_url and n.action_label %}
+                    <a href="{{ n.action_url }}" class="btn btn-outline-primary btn-sm mt-2"
+                       style="border-radius:1rem;padding:0.2rem 0.9rem;font-size:0.92em;">
+                      {{ n.action_label }}
+                    </a>
+                  {% endif %}
+                </div>
+                {% if not n.read %}
+                  <span class="badge bg-primary align-self-start mt-1 me-2">Unread</span>
+                  <button class="btn btn-outline-success btn-sm mark-read-btn" data-id="{{ n.id }}">
+                    <i class="fa fa-check"></i> Mark as read
+                  </button>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center text-muted py-5" style="font-size:1.1em;">
+              <i class="fa fa-bell-slash" style="font-size:2em;opacity:0.5;"></i><br>
+              No notifications to display.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-footer" style="background:#fafdff;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        {% if unread_notification_count > 0 %}
+        <a href="#" id="markAllReadLinkModal" class="btn btn-outline-primary">
+          <i class="fa fa-check-double"></i> Mark all as read
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -1,0 +1,176 @@
+/* Add more spacing below the fixed topbar for all pages */
+  .main-content-spacing {
+    margin-top: 8rem !important; /* Increased space under topbar */
+    min-height: 200px;
+  }
+  @media (max-width: 900px) {
+    .main-content-spacing {
+      margin-top: 6rem !important;
+    }
+  }
+
+  .topbar-icons .btn-light:hover {
+    background: #e3ebfa;
+    color: #1976d2;
+  }
+
+  .notification-message {
+    font-weight: 500;
+    color: #222;
+    margin-bottom: 0.2rem;
+    max-width: 220px;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .icon-btn {
+    background: rgba(255,255,255,0.10);
+    border: 2px solid #e3ebfa;
+    border-radius: 1.3rem;
+    padding: 0.38rem 0.55rem;
+    color: #fff;
+    font-size: 1.15rem;
+    position: relative;
+    transition: 
+      background 0.18s, 
+      box-shadow 0.18s, 
+      color 0.18s, 
+      border-color 0.18s;
+    outline: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(33,118,193,0.07);
+    vertical-align: middle;
+  }
+  .icon-btn:hover, .icon-btn:focus {
+    background: #fff;
+    color: #2176c1;
+    border-color: #b6d0f7;
+    box-shadow: 0 4px 16px rgba(33,118,193,0.13);
+    /* No floating effect */
+  }
+  .icon-btn:active {
+    background: #e3ebfa;
+    color: #1976d2;
+    border-color: #1976d2;
+    box-shadow: 0 2px 8px rgba(33,118,193,0.10);
+    transform: scale(0.97);
+  }
+  .icon-btn .bi {
+    transition: color 0.18s, transform 0.18s;
+    font-size: 1.15rem;
+    vertical-align: middle;
+
+  }
+  .icon-badge {
+    position: absolute;
+    top: 6px;    /* Adjust as needed for vertical alignment */
+    right: 6px;  /* Adjust as needed for horizontal alignment */
+    min-width: 1em;
+    height: 1em;
+    padding: 0 0.22em;
+    font-size: 0.68em;
+    background: #e53935;
+    color: #fff;
+    border-radius: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(229,57,53,0.12);
+    pointer-events: none;
+    z-index: 2;
+    border: 2px solid #fff;
+  }
+  .icon-badge.bg-success {
+    background: #22c55e;
+  }
+  @keyframes fadeInBadge {
+    from { opacity: 0; transform: scale(0.7);}
+    to { opacity: 1; transform: scale(1);}
+  }
+  .animate-bounce {
+    animation: bounceBadge 1s infinite alternate;
+  }
+  @keyframes bounceBadge {
+    0% { transform: translateY(0);}
+    100% { transform: translateY(-4px);}
+  }
+
+  /* Make notification dropdown broader and visually separated */
+  .notification-dropdown-menu {
+    min-width: 420px;
+    max-width: 520px;
+    border-radius: 1.2rem;
+    box-shadow: 0 8px 32px rgba(33, 118, 193, 0.15), 0 1.5px 8px rgba(0,0,0,0.06);
+    background: #fff;
+    border: none;
+    padding: 0;
+    overflow: hidden;
+    animation: fadeInDown 0.22s;
+  }
+
+  /* Visual separation between notifications */
+  .notification-list {
+    max-height: 360px;
+    overflow-y: auto;
+    background: #f8fafd;
+    padding: 0.2rem 0;
+  }
+  .notification-item {
+    border-radius: 0.7rem;
+    transition: background 0.15s;
+    cursor: pointer;
+    background: #f8fafd; /* Use same color as .notification-list bg for ALL notifications */
+    border-left: 4px solid transparent;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1.1rem 1.5rem;
+    margin: 0.5rem 1rem;
+    box-shadow: 0 2px 8px rgba(33,118,193,0.04);
+    border-bottom: 2px solid #f0f4fa;
+  }
+  .notification-item:last-child {
+    border-bottom: none;
+  }
+  .notification-item.unread {
+    background: #f8fafd; /* No light blue, same as normal notifications */
+    border-left: 4px solid #2176c1;
+    font-weight: 600;
+  }
+  .notification-item:hover {
+    background: #f3f7fd;
+  }
+  .notification-item .notif-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 0.5rem;
+    border: 2px solid #e3ebfa;
+  }
+  .notification-time {
+    font-size: 0.92em;
+    color: #888;
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(16px);}
+    to { opacity: 1; transform: translateY(0);}
+  }
+
+  .notification-item,
+  .notification-item:hover,
+  .notification-item:focus,
+  .notification-message,
+  .notification-time,
+  .dropdown-item,
+  .dropdown-item:focus,
+  .dropdown-item:hover,
+  a,
+  a:focus,
+  a:hover {
+    text-decoration: none !important;
+  }

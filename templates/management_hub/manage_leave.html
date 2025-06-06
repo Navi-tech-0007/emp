@@ -582,6 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('reviewStatusForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    showLoading();
     const form = this;
     const action = form.action;
     const formData = new FormData(form);
@@ -601,24 +602,28 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data.success) {
         // Update the status badge in the main table
         const row = document.querySelector(`tr[data-request-id="${formData.get('request_id')}"]`);
-        let badge = row.querySelector('.status-badge');
-        let iconHtml = '';
-        let badgeClass = '';
-        if (data.new_status === 'Approved') {
-          iconHtml = '<i class="fa fa-check-circle"></i> Approved';
-          badgeClass = 'badge bg-success status-badge';
-        } else if (data.new_status === 'Rejected') {
-          iconHtml = '<i class="fa fa-times-circle"></i> Rejected';
-          badgeClass = 'badge bg-danger status-badge';
-        } else if (data.new_status === 'Cancelled') {
-          iconHtml = '<i class="fa fa-ban"></i> Cancelled';
-          badgeClass = 'badge bg-warning text-dark status-badge';
-        } else {
-          iconHtml = '<i class="fa fa-hourglass-half"></i> Pending';
-          badgeClass = 'badge bg-secondary status-badge';
+        if (row) {
+          let badge = row.querySelector('.status-badge');
+          if (badge) {
+            let iconHtml = '';
+            let badgeClass = '';
+            if (data.new_status === 'Approved') {
+              iconHtml = '<i class="fa fa-check-circle"></i> Approved';
+              badgeClass = 'badge bg-success status-badge';
+            } else if (data.new_status === 'Rejected') {
+              iconHtml = '<i class="fa fa-times-circle"></i> Rejected';
+              badgeClass = 'badge bg-danger status-badge';
+            } else if (data.new_status === 'Cancelled') {
+              iconHtml = '<i class="fa fa-ban"></i> Cancelled';
+              badgeClass = 'badge bg-warning text-dark status-badge';
+            } else {
+              iconHtml = '<i class="fa fa-hourglass-half"></i> Pending';
+              badgeClass = 'badge bg-secondary status-badge';
+            }
+            badge.className = badgeClass;
+            badge.innerHTML = iconHtml;
+          }
         }
-        badge.className = badgeClass;
-        badge.innerHTML = iconHtml;
 
         // Remove from pending requests modal
         const pendingRow = document.querySelector(`#pendingRequestsModal tr[data-request-id="${formData.get('request_id')}"]`);
@@ -654,6 +659,9 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch((err) => {
       showToast("Error updating status: " + err.message, 'danger');
+    })
+    .finally(() => {
+      hideLoading();
     });
   });
 });
