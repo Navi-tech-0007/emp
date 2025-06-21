@@ -265,3 +265,46 @@ def get_unread_notifications(username, limit=5):
     conn.close()
     return notifications, unread_count
 
+@main_bp.route('/orgchart')
+@login_required
+def org_chart():
+    # Fetch the full user record
+    user = get_user_by_username(current_user.username)
+    if not user or not user.get('department'):
+        return "User or department not found", 404
+
+    department = user['department']
+
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT username, name, role, department, avatar_url FROM users WHERE department=%s ORDER BY name", (department,))
+    dept_users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # Find manager
+    manager = next((u for u in dept_users if u['role'].lower() == 'manager'), None)
+
+    # Find all managers in department
+    dept_managers = [u for u in dept_users if u['role'].lower() == 'manager']
+
+    # Find colleagues (excluding self and manager)
+    colleagues = [u for u in dept_users if u['username'] != current_user.username and u['role'].lower() != 'manager']
+
+    # Find left and right colleague (for demo: just pick first two)
+    left_colleague = colleagues[0] if len(colleagues) > 0 else None
+    right_colleague = colleagues[1] if len(colleagues) > 1 else None
+
+    return render_template(
+        'orgchart.html',
+        manager=manager,
+        left_colleague=left_colleague,
+        right_colleague=right_colleague,
+        dept_managers=dept_managers
+    )
+

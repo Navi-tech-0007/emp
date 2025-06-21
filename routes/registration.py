@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app, abort
 from werkzeug.security import generate_password_hash
 from util import check_hr_code, get_next_employee_id, create_notification
 import datetime
@@ -80,7 +80,10 @@ def check_email():
     return jsonify({'exists': exists})
 
 @registration_bp.route('/hr/generate_hr_code', methods=['GET', 'POST'])
+@login_required
 def generate_hr_code():
+    if current_user.role != 'hr':
+        return render_template('no_access.html'), 403
     if request.method == 'GET':
         ensure_default_departments()
         conn = mysql.connector.connect(
@@ -131,7 +134,10 @@ def generate_hr_code():
     return jsonify({'success': True, 'code': code})
 
 @registration_bp.route('/hr/hr_codes')
+@login_required
 def view_hr_codes():
+    if current_user.role != 'hr':
+        return render_template('no_access.html'), 403
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -146,7 +152,10 @@ def view_hr_codes():
     return render_template('hr_codes.html', codes=codes, )
 
 @registration_bp.route('/hr/revoke_hr_code', methods=['POST'])
+@login_required
 def revoke_hr_code():
+    if current_user.role != 'hr':
+        return render_template('no_access.html'), 403
     code = request.form['code']
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
@@ -163,7 +172,10 @@ def revoke_hr_code():
     return redirect(url_for('registration.view_hr_codes'))
 
 @registration_bp.route('/hr/regenerate_hr_code', methods=['POST'])
+@login_required
 def regenerate_hr_code():
+    if current_user.role != 'hr':
+        return render_template('no_access.html'), 403
     code_value = request.form.get('code')
     email = request.form.get('email')
     role = request.form.get('role')

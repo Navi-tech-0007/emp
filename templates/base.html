@@ -3,27 +3,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}Your App{% endblock %}</title>
+  <title>{% block title %}Employee Portal{% endblock %}</title>
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <!-- Toastr (optional notifications) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-  <!-- Flatpickr (optional date picker) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <!-- DataTables (optional tables) -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-  <!-- Animate.css (optional animations) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-  <!-- AOS.js (optional scroll animations) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
-  
+  <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   {% endblock %}
   {% block styles %}{% endblock %}
+  <style>
+    /* Toast container just under the topbar, does not block pointer events */
+    #toastContainer {
+      position: fixed;
+      top: 64px; /* Adjust to match your topbar height */
+      right: 0;
+      z-index: 1100;
+      padding: 1rem;
+      pointer-events: none;
+    }
+    #toastContainer .toast {
+      pointer-events: auto;
+    }
+
+    .notification-fade {
+      opacity: 0 !important;
+      transition: opacity 0.5s;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
   <!-- Redesigned Topbar START -->
@@ -52,7 +62,7 @@
       <form class="d-none d-md-flex flex-grow-1 mx-3" style="max-width:400px;position:relative;">
         <input type="text" class="form-control rounded-pill ps-5"
              placeholder="Search..."
-             style="background:#24304a;color:#fff;border:none;">
+             style="background:#ffffff;color:#fff;border:none;">
       <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#2176c1;">
         <i class="fa fa-search"></i>
       </span>
@@ -95,7 +105,7 @@
                       {% endif %}
                     </div>
                     {% if not n.read %}
-                    <button class="btn btn-link p-0 ms-2" title="Mark as read"><i class="fa fa-check"></i></button>
+                    <button class="btn btn-link p-0 ms-2 mark-read-btn" data-id="{{ n.id }}" title="Mark as read"><i class="fa fa-check"></i></button>
                     {% endif %}
                   </a>
                   {% endfor %}
@@ -149,6 +159,9 @@
     </div>
   </nav>
   <!-- Redesigned Topbar END -->
+
+  <!-- Toast container just under the topbar, always present -->
+  <div id="toastContainer"></div>
 
   <div class="container main-content-spacing" style="margin-top: 6.5rem; min-height:200px;">
     {% block content %}
@@ -204,25 +217,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Font Awesome JS (optional, for some icon features) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
-  <!-- Toastr -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-  <!-- Flatpickr -->
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <!-- jQuery -->
+  <!-- jQuery (if needed) -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <!-- Then DataTables -->
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-  <!-- Animate.css is CSS only -->
-  <!-- AOS.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
-  <!-- FullCalendar -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- jsPDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   {% block extra_js %}{% endblock %}
 
   <script>

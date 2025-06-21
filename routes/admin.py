@@ -9,9 +9,8 @@ admin_bp = Blueprint('admin', __name__)
 @admin_bp.route('/admin/users')
 @login_required
 def view_users():
-    if current_user.role.lower() != 'admin':
-        flash("Access denied: Admins only.", "danger")
-        return redirect(url_for('main.home'))
+    if current_user.role.lower() not in ['admin', 'hr']:
+        return render_template('no_access.html'), 403
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
         user=current_app.config['DB_USER'],
@@ -37,7 +36,10 @@ def view_users():
     )
 
 @admin_bp.route('/admin/reset_password', methods=['POST'])
+@login_required
 def reset_password():
+    if current_user.role.lower() not in ['admin', 'hr']:
+        return render_template('no_access.html'), 403
     email = request.form['email']
     new_password = request.form['new_password']
     conn = mysql.connector.connect(
@@ -58,12 +60,14 @@ def reset_password():
     cursor.close()
     conn.close()
     flash('Password reset.')
-    # Notify user
     create_notification(email, "Your password was reset by an admin.", url="/profile")
     return redirect(url_for('admin.view_users'))
 
 @admin_bp.route('/admin/deactivate_user', methods=['POST'])
+@login_required
 def deactivate_user():
+    if current_user.role.lower() not in ['admin', 'hr']:
+        return render_template('no_access.html'), 403
     email = request.form['email']
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
@@ -77,12 +81,14 @@ def deactivate_user():
     cursor.close()
     conn.close()
     flash('User deactivated.')
-    # Notify user
     create_notification(email, "Your account has been deactivated by an admin.", url="/profile")
     return redirect(url_for('admin.view_users'))
 
 @admin_bp.route('/admin/activate_user', methods=['POST'])
+@login_required
 def activate_user():
+    if current_user.role.lower() not in ['admin', 'hr']:
+        return render_template('no_access.html'), 403
     email = request.form['email']
     conn = mysql.connector.connect(
         host=current_app.config['DB_HOST'],
@@ -96,12 +102,14 @@ def activate_user():
     cursor.close()
     conn.close()
     flash('User activated.')
-    # Notify user
     create_notification(email, "Your account has been activated by an admin.", url="/profile")
     return redirect(url_for('admin.view_users'))
 
 @admin_bp.route('/bulk_user_action', methods=['POST'])
+@login_required
 def bulk_user_action():
+    if current_user.role.lower() not in ['admin', 'hr']:
+        return render_template('no_access.html'), 403
     data = request.get_json()
     action = data.get('action')
     users = data.get('users', [])
@@ -114,7 +122,6 @@ def bulk_user_action():
     cursor = conn.cursor()
     for username in users:
         cursor.execute("UPDATE users SET active=%s WHERE username=%s", (True if action == 'activate' else False, username))
-        # Notify user
         if action == 'activate':
             create_notification(username, "Your account has been activated by an admin.", url="/profile")
         elif action == 'deactivate':

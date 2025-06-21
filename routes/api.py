@@ -174,3 +174,22 @@ def mark_all_notifications_read():
     cursor.close()
     conn.close()
     return jsonify({'success': True})
+
+@api_bp.route('/api/notifications/<int:notif_id>/mark_read', methods=['POST'])
+@login_required
+def mark_single_notification_read(notif_id):
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE notifications SET is_read=1 WHERE id=%s AND user_username=%s",
+        (notif_id, current_user.username)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'success': True})

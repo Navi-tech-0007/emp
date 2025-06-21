@@ -196,3 +196,19 @@ def create_notification(user_username, message, url=None):
     conn.commit()
     cursor.close()
     conn.close()
+
+def get_all_roles():
+    """Fetch all unique roles from the users table."""
+    from flask import current_app
+    conn = mysql.connector.connect(
+        host=current_app.config['DB_HOST'],
+        user=current_app.config['DB_USER'],
+        password=current_app.config['DB_PASSWORD'],
+        database=current_app.config['DB_NAME']
+    )
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT role FROM users WHERE role IS NOT NULL AND role != '' ORDER BY role")
+    roles = [row[0] for row in cursor.fetchall()]
+    cursor.close()
+    conn.close()
+    return roles

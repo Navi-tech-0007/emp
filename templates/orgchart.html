@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+.orgchart-bg {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  min-height: 100vh;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.orgchart-manager-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+  position: relative;
+}
+.orgchart-manager-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  object-fit: cover;
+  background: #e0e7ef;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 24px rgba(30,64,175,0.18);
+  transition: box-shadow 0.2s;
+}
+.orgchart-manager-avatar:hover {
+  box-shadow: 0 0 0 6px #60a5fa, 0 4px 24px rgba(30,64,175,0.18);
+}
+.orgchart-badge {
+  position: absolute;
+  top: 0;
+  right: -10px;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  border: 2px solid #fff;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(30,64,175,0.18);
+}
+.orgchart-manager-name {
+  background: rgba(0,0,0,0.18);
+  color: #fff;
+  border-radius: 14px;
+  padding: 6px 20px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(30,64,175,0.10);
+  letter-spacing: 0.01em;
+}
+.orgchart-connector {
+  width: 2px;
+  height: 36px;
+  background: #fff;
+  margin: 0 auto;
+  border-radius: 1px;
+  opacity: 0.7;
+}
+.orgchart-direct-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 36px;
+  margin-top: 0;
+  position: relative;
+}
+.orgchart-card {
+  background: rgba(255,255,255,0.18);
+  border: none;
+  box-shadow: 0 4px 24px rgba(30,64,175,0.10);
+  text-align: center;
+  position: relative;
+  min-width: 110px;
+  max-width: 160px;
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  transition: box-shadow 0.2s, transform 0.2s, opacity 0.2s, filter 0.2s;
+  padding: 18px 10px 12px 10px;
+}
+.orgchart-card.current {
+  border: 3px solid #60a5fa;
+  box-shadow: 0 0 0 8px rgba(96,165,250,0.15), 0 4px 24px rgba(30,64,175,0.18);
+  transform: scale(1.12);
+  z-index: 2;
+  background: rgba(255,255,255,0.28);
+}
+.orgchart-card.current .orgchart-avatar {
+  width: 110px;
+  height: 110px;
+  border-width: 4px;
+  box-shadow: 0 0 0 6px #60a5fa, 0 4px 24px rgba(30,64,175,0.18);
+}
+.orgchart-card.current .orgchart-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2563eb;
+  background: rgba(255,255,255,0.7);
+  letter-spacing: 0.01em;
+}
+.orgchart-card.half {
+  opacity: 0.5;
+  filter: blur(2px);
+  transform: scale(0.92);
+  z-index: 1;
+}
+.orgchart-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  object-fit: cover;
+  background: #e0e7ef;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(30,64,175,0.10);
+  transition: box-shadow 0.2s;
+}
+.orgchart-card:not(.half):hover .orgchart-avatar {
+  box-shadow: 0 0 0 6px #60a5fa, 0 4px 24px rgba(30,64,175,0.18);
+}
+.orgchart-name {
+  background: rgba(0,0,0,0.18);
+  color: #fff;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-weight: 500;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 auto 2px auto;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+.orgchart-role {
+  color: #fff;
+  font-size: 0.95rem;
+  opacity: 0.85;
+  margin-top: 2px;
+  letter-spacing: 0.01em;
+}
+.orgchart-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+  color: #fff;
+  background: rgba(30,64,175,0.7);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(30,64,175,0.18);
+  transition: background 0.2s;
+}
+.orgchart-arrow:hover {
+  background: #2563eb;
+}
+.orgchart-arrow.left { left: -56px; }
+.orgchart-arrow.right { right: -56px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="orgchart-bg">
+  <div class="container">
+    <!-- Manager Row -->
+    {% if manager %}
+      <div class="orgchart-manager-row">
+        <div style="position:relative;">
+          <img src="{{ manager.avatar_url or url_for('static', filename='default_avatar.png') }}" class="orgchart-manager-avatar">
+          {% if manager.badge %}
+            <span class="orgchart-badge">{{ manager.badge }}</span>
+          {% endif %}
+        </div>
+        <div class="orgchart-manager-name">{{ manager.name }}</div>
+      </div>
+      <div class="orgchart-connector"></div>
+    {% endif %}
+
+    <!-- Direct Reports Row -->
+    <div class="position-relative">
+      {% if left_colleague %}
+        <div class="orgchart-arrow left" onclick="moveLeft()">
+          <i class="fa fa-chevron-left"></i>
+        </div>
+      {% endif %}
+      <div class="orgchart-direct-row">
+        {% if left_colleague %}
+          <div class="orgchart-card half">
+            <img src="{{ left_colleague.avatar_url or url_for('static', filename='default_avatar.png') }}" class="orgchart-avatar">
+            <div class="orgchart-name">{{ left_colleague.name }}</div>
+          </div>
+        {% endif %}
+        <div class="orgchart-card current">
+          <img src="{{ current_user.avatar_url or url_for('static', filename='default_avatar.png') }}" class="orgchart-avatar">
+          <div class="orgchart-name">{{ current_user.name }}</div>
+          <div class="orgchart-role">{{ current_user.role|capitalize }}</div>
+        </div>
+        {% if right_colleague %}
+          <div class="orgchart-card half">
+            <img src="{{ right_colleague.avatar_url or url_for('static', filename='default_avatar.png') }}" class="orgchart-avatar">
+            <div class="orgchart-name">{{ right_colleague.name }}</div>
+          </div>
+        {% endif %}
+      </div>
+      {% if right_colleague %}
+        <div class="orgchart-arrow right" onclick="moveRight()">
+          <i class="fa fa-chevron-right"></i>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function moveLeft() {
+  // Implement logic to show previous colleague as center
+}
+function moveRight() {
+  // Implement logic to show next colleague as center
+}
+</script>
+{% endblock %}

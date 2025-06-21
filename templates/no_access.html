@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+  .no-access-container {
+    max-width: 480px;
+    margin: 60px auto;
+    padding: 2.5rem 2rem;
+    background: #fff;
+    border-radius: 1.2rem;
+    box-shadow: 0 2px 16px rgba(44,62,80,0.10);
+    text-align: center;
+  }
+  .no-access-icon {
+    font-size: 3.5rem;
+    color: #e63946;
+    margin-bottom: 1rem;
+  }
+  .no-access-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.7rem;
+  }
+  .no-access-message {
+    font-size: 1.15rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-access-container">
+  <div class="no-access-icon">
+    <i class="bi bi-shield-lock-fill"></i>
+  </div>
+  <div class="no-access-title">Access Denied</div>
+  <div class="no-access-message">
+    You do not have permission to view this page.<br>
+    If you believe this is an error, please contact your administrator.
+  </div>
+  <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+    <i class="bi bi-arrow-left"></i> Back to Home
+  </a>
+</div>
+{% endblock%}

@@ -31,6 +31,10 @@ def login():
         cursor.close()
         conn.close()
         if user:
+            # Check if user is active BEFORE any password or reset logic
+            if not user.get('active', 1):  # or user['active'] == 0
+                flash("Your account is inactive. Please contact admin.", "danger")
+                return redirect(url_for('auth.login', email=form.username.data))
             if not user['password'].startswith('pbkdf2:sha256:'):
                 session['reset_user'] = user['username']
                 flash("Your password needs to be reset due to a system upgrade. Please set a new password.", "warning")
